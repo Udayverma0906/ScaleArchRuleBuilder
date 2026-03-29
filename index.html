@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ScaleArch — Rule Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="icon" type="image/png" href="icon.png">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">SA</div>
+    <div>
+      <div class="logo-text">ScaleArch</div>
+      <div class="logo-sub">Rule Builder</div>
+    </div>
+  </div>
+  <button id="infoBtn" class="info-btn">Details</button>
+</header>
+
+<div class="hero">
+  <h1>Build rules,<br/><span>not headaches.</span></h1>
+  <p>Design custom lint rules for your team or company. Fill in the form → get production-ready TypeScript → paste into <code style="color:var(--accent3)">customRules.ts</code> and you're done.</p>
+</div>
+
+<div class="steps">
+  <div class="step-pill active" id="pill-1"><span class="num">1</span> Define rule</div>
+  <div class="step-pill" id="pill-2"><span class="num">2</span> Configure</div>
+  <div class="step-pill" id="pill-3"><span class="num">3</span> Generate</div>
+  <div class="step-pill" id="pill-4"><span class="num">4</span> Paste &amp; go</div>
+</div>
+
+<div class="main">
+
+  <!-- ── LEFT: FORM ── -->
+  <div style="display:flex;flex-direction:column;gap:20px;">
+
+    <!-- Identity Panel -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-icon purple">◈</div>
+        <div class="panel-title">Rule identity</div>
+        <div class="panel-subtitle">STEP 1–2</div>
+      </div>
+      <div class="panel-body">
+        <div class="field-row">
+          <div class="field">
+            <label><span class="required">*</span> Category</label>
+            <select id="category">
+              <option value="">— select —</option>
+              <option value="database">🗄️  Database</option>
+              <option value="performance">⚡ Performance</option>
+              <option value="security">🔒 Security</option>
+              <option value="solid">🏗️  SOLID</option>
+              <option value="code-quality">🧹 Code quality</option>
+            </select>
+          </div>
+          <div class="field">
+            <label><span class="required">*</span> Rule name</label>
+            <input type="text" id="ruleName" placeholder="e.g. no-raw-sql" autocomplete="off"/>
+          </div>
+        </div>
+        <div class="field">
+          <label><span class="required">*</span> Short message <span style="color:var(--text-dim);font-size:9px;margin-left:4px;">shown in the squiggly tooltip</span></label>
+          <input type="text" id="message" placeholder="e.g. Raw SQL detected — use QueryBuilder instead" autocomplete="off"/>
+        </div>
+        <div class="field">
+          <label>Hint <span style="color:var(--text-dim);font-size:9px;margin-left:4px;">longer explanation on hover — include WHY and HOW to fix</span></label>
+          <textarea id="hint" rows="3" placeholder="e.g. Raw SQL bypasses our query logging and audit trail. Use: import { QueryBuilder } from '@company/db' " autocomplete="off"></textarea>
+        </div>
+        <div class="field">
+          <label><span class="required">*</span> Severity</label>
+          <div class="severity-grid">
+            <button class="sev-btn selected" data-sev="error"   onclick="setSev('error')">  <span class="dot"></span>Error</button>
+            <button class="sev-btn"          data-sev="warning" onclick="setSev('warning')"><span class="dot"></span>Warning</button>
+            <button class="sev-btn"          data-sev="info"    onclick="setSev('info')">   <span class="dot"></span>Info</button>
+            <button class="sev-btn"          data-sev="hint"    onclick="setSev('hint')">   <span class="dot"></span>Hint</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detection Panel -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-icon teal">⬡</div>
+        <div class="panel-title">Detection method</div>
+        <div class="panel-subtitle">STEP 3</div>
+      </div>
+      <div class="panel-body">
+
+        <div class="field">
+          <label><span class="required">*</span> Rule type</label>
+          <div class="type-toggle">
+            <button class="type-btn selected" id="btn-regex" onclick="setType('regex')">
+              <span class="type-name">Regex</span>
+              Line-by-line pattern match. Fast, great for string detection, SQL patterns, banned API calls.
+            </button>
+            <button class="type-btn" id="btn-ast" onclick="setType('ast')">
+              <span class="type-name">AST</span>
+              Structure-aware. For function length, class methods, param counts, catch blocks.
+            </button>
+          </div>
+        </div>
+
+         <!-- ══ REGEX SECTION ══ -->
+        <div id="regex-section" style="display:flex;flex-direction:column;gap:16px;">
+
+         
+          <div class="ai-box">
+            <div class="ai-box-header">
+              <span class="ai-badge">AI</span>
+              <span class="ai-box-title">Regex generator</span>
+              <span class="ai-box-sub">Describe what to detect in plain English</span>
+            </div>
+            <div class="ai-box-body">
+              <div class="ai-examples">
+                <span class="ai-example-label">Try:</span>
+                <button class="ai-chip" onclick="setAiPrompt(this)">subquery inside IN clause</button>
+                <button class="ai-chip" onclick="setAiPrompt(this)">hardcoded IP address</button>
+                <button class="ai-chip" onclick="setAiPrompt(this)">more than 5 JOINs in a query</button>
+                <button class="ai-chip" onclick="setAiPrompt(this)">console.log with password or secret</button>
+              </div>
+              <div class="ai-input-row">
+                <input type="text" id="aiPrompt" placeholder="e.g. detect IN (SELECT ...) subquery in SQL strings…" autocomplete="off"/>
+                <button class="ai-gen-btn" id="aiGenBtn" onclick="generateRegexWithAI()">
+                  <span id="aiGenBtnText">Generate</span>
+                </button>
+              </div>
+              <div id="aiResult" style="display:none;"></div>
+            </div>
+          </div> 
+
+          <div class="field">
+            <label><span class="required">*</span> Regex pattern <span style="color:var(--text-dim);font-size:9px;margin-left:4px;">will be wrapped in /pattern/i</span></label>
+            <input type="text" id="regexPattern" placeholder="e.g. \bfetch\s*\("/>
+          </div>
+          <div class="field">
+            <label>Test your pattern</label>
+            <div class="regex-test-area">
+              <div class="test-input-row">
+                <input type="text" id="testLine" placeholder="Paste a line of code to test…"/>
+                <button class="test-btn" onclick="testRegex()">Test →</button>
+              </div>
+              <div class="test-result" id="testResult"></div>
+            </div>
+          </div>
+          <div class="field">
+            <label>Context look-back <span style="color:var(--text-dim);font-size:9px;margin-left:4px;">detect this pattern only near a loop / async / class</span></label>
+            <select id="contextType">
+              <option value="none">No context required</option>
+              <option value="loop">Inside a loop (for / while / forEach / map)</option>
+              <option value="async">Inside async function</option>
+              <option value="class">Inside a class</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ══ AST SECTION ══ -->
+        <div id="ast-section" style="display:none;flex-direction:column;gap:16px;">
+
+          <div class="ast-hint">
+            <strong>How AST rules work:</strong> your function receives one node at a time from the syntax tree. Return <code style="color:var(--accent3)">null</code> to skip, return a <code style="color:var(--accent3)">RuleResult</code> to flag it.
+          </div>
+
+          <!-- Node picker — click selects, click again on info icon shows detail card -->
+          <div class="field">
+            <label><span class="required">*</span> AST node type
+              <span style="color:var(--text-dim);font-size:9px;margin-left:4px;">click to select · click ⓘ for details · multiple allowed</span>
+            </label>
+            <div class="node-picker" id="nodePicker">
+              <!-- injected by JS -->
+            </div>
+            <input type="text" id="astNodeType" placeholder="Selected types appear here…" style="margin-top:8px;" readonly/>
+          </div>
+
+          <!-- Node info card -->
+          <div class="node-info-card" id="nodeInfoCard" style="display:none;">
+            <div class="nic-header">
+              <span class="nic-name" id="nicName"></span>
+              <button class="nic-close" onclick="closeNodeInfo()">✕</button>
+            </div>
+            <p class="nic-desc" id="nicDesc"></p>
+            <div class="nic-section-label">Code that produces this node</div>
+            <pre class="nic-pre" id="nicExample"></pre>
+            <div class="nic-section-label" style="margin-top:12px;">Useful properties to check</div>
+            <div class="nic-props" id="nicProps"></div>
+          </div>
+
+          <div class="field">
+            <label><span class="required">*</span> What to check on the node</label>
+            <select id="astCheck">
+              <option value="empty-body">Body is empty (no statements)</option>
+              <option value="param-count">Too many parameters (threshold)</option>
+              <option value="method-count">Too many methods in class (threshold)</option>
+              <option value="line-count">Function too long (threshold)</option>
+              <option value="callee-name">Specific function called — CallExpression (e.g. fetch(), eval())</option>
+              <option value="declared-name">Specific function declared — FunctionDeclaration name</option>
+              <option value="method-name">Specific method declared — MethodDefinition name in class</option>
+              <option value="custom-prop">Custom property check</option>
+            </select>
+          </div>
+          <div class="field" id="thresholdField" style="display:none;">
+            <label>Threshold number</label>
+            <input type="text" id="astThreshold" placeholder="e.g. 5"/>
+          </div>
+          <div class="field" id="calleeField" style="display:none;">
+            <label id="calleeLabel">Function / method name to detect</label>
+            <input type="text" id="astCallee" placeholder="e.g. oldProv, fetch, eval"/>
+          </div>
+        </div>
+
+        <button class="generate-btn" onclick="generate()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+            <polyline points="4,8 8,4 12,8"/><line x1="8" y1="4" x2="8" y2="13"/>
+          </svg>
+          Generate rule code
+        </button>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RIGHT: OUTPUT ── -->
+  <div style="display:flex;flex-direction:column;gap:20px;">
+    <div class="output-panel" style="flex:1;display:flex;flex-direction:column;">
+      <div class="output-header">
+        <div class="output-title">Generated code</div>
+        <div class="output-tabs">
+          <button class="tab-btn active" onclick="switchTab('code',this)">rule.ts</button>
+          <button class="tab-btn" onclick="switchTab('instructions',this)">how to use</button>
+        </div>
+        <button class="copy-btn" id="copyBtn" onclick="copyCode()">Copy</button>
+      </div>
+      <div id="tab-code" style="flex:1;display:flex;flex-direction:column;">
+        <div class="empty-state" id="emptyState">
+          <div class="big">{ }</div>
+          Fill in the form on the left<br/>and hit <strong style="color:var(--text-muted)">Generate rule code</strong><br/>to see your TypeScript here.
+        </div>
+        <div class="code-wrap" id="codeWrap" style="display:none;flex:1;">
+          <pre id="codeOutput" style="max-height:none;height:100%;min-height:420px;"></pre>
+        </div>
+      </div>
+      <div id="tab-instructions" style="display:none;flex:1;">
+        <div class="instructions active">
+          <div class="step-card">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <h3>Open <code class="inline-code">src/rules/customRules.ts</code></h3>
+              <p>This is the only file you need to edit. Core files stay untouched.</p>
+            </div>
+          </div>
+          <div class="step-card" id="instrStep2">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <h3 id="instrStep2Title">Add to CUSTOM_REGEX_RULES array</h3>
+              <p id="instrStep2Body">Find the <span class="inline-code">CUSTOM_REGEX_RULES</span> array in Section 1 and paste the generated object inside it.</p>
+            </div>
+          </div>
+          <div class="step-card" id="instrStep3" style="display:none;">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <h3>Register in CUSTOM_AST_CHECKS</h3>
+              <p>Also add your function name to the <span class="inline-code">CUSTOM_AST_CHECKS</span> array at the bottom of Section 2.</p>
+            </div>
+          </div>
+          <div class="step-card">
+            <div class="step-num" id="finalStep">3</div>
+            <div class="step-content">
+              <h3>Press F5 and test it</h3>
+              <p>Launch the Extension Development Host, open your test file, and verify the squiggly line appears on the right line.</p>
+            </div>
+          </div>
+          <div class="step-card" style="background:rgba(255,181,71,0.04);border-top:1px solid rgba(255,181,71,0.15);">
+            <div class="step-num" style="background:rgba(255,181,71,0.15);border-color:rgba(255,181,71,0.3);color:var(--warn);">!</div>
+            <div class="step-content">
+              <h3 style="color:var(--warn);">Known behaviour — warnings disappear while typing</h3>
+              <p>This is normal. While you type an incomplete statement the file has a syntax error, so the AST parser returns nothing and all warnings clear temporarily. They reappear 600ms after you stop typing.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="notif" id="notif">✓ Copied to clipboard</div>
+
+<div id="infoModal" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h2>ScaleArch Rule Builder</h2>
+    <p><strong>Version: </strong>v1.0.0</p>
+    <p><strong>Created by: </strong> Uday Verma</p>
+    <p><a href="https://github.com/Udayverma0906/ScaleArch" target="_blank">GitHub Repository for Extension</a></p>
+    <p><a href="https://www.linkedin.com/in/uday-verma0906/" target="_blank">LinkedIn</a></p>
+  </div>
+</div>
+
+<script src="script.js" defer></script>
+</body>
+</html>
