@@ -492,7 +492,7 @@
   }
 
   .output-header {
-    display: flex; align-items: center; gap: 12px;
+    display: flex; align-items: flex-start; gap: 12px;
     padding: 16px 24px;
     border-bottom: 1px solid var(--border);
     background: var(--surface2);
@@ -500,6 +500,31 @@
 
   .output-title {
     font-size: 13px; font-weight: 700; color: var(--text);
+  }
+
+  .warning-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    background: rgba(255,181,71,0.08);
+    border: 1px solid rgba(255,181,71,0.2);
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-top: 8px;
+    max-width: 300px;
+  }
+
+  .warning-icon {
+    font-size: 14px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .warning-text {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--warn);
+    line-height: 1.4;
   }
 
   .output-tabs {
@@ -552,7 +577,7 @@
     line-height: 1.75;
     color: #c8c8f0;
     overflow-x: auto;
-    white-space: pre;
+    white-space: pre-wrap;
     max-height: 400px;
     overflow-y: auto;
   }

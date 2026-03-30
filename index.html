@@ -130,13 +130,13 @@
 
           <div class="field">
             <label><span class="required">*</span> Regex pattern <span style="color:var(--text-dim);font-size:9px;margin-left:4px;">will be wrapped in /pattern/i</span></label>
-            <input type="text" id="regexPattern" placeholder="e.g. \bfetch\s*\("/>
+            <input type="text" autocomplete="off" id="regexPattern" placeholder="e.g. \bfetch\s*\("/>
           </div>
           <div class="field">
             <label>Test your pattern</label>
             <div class="regex-test-area">
               <div class="test-input-row">
-                <input type="text" id="testLine" placeholder="Paste a line of code to test…"/>
+                <input type="text" id="testLine" autocomplete="off" placeholder="Paste a line of code to test…"/>
                 <button class="test-btn" onclick="testRegex()">Test →</button>
               </div>
               <div class="test-result" id="testResult"></div>
@@ -238,7 +238,13 @@
   <div style="display:flex;flex-direction:column;gap:20px;">
     <div class="output-panel" style="flex:1;display:flex;flex-direction:column;">
       <div class="output-header">
-        <div class="output-title">Generated code</div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div class="output-title">Generated code</div>
+          <div class="warning-box">
+            <span class="warning-icon">⚠️</span>
+            <span class="warning-text">This generated code provides a basic skeleton structure. It may not include complete logic and requires manual review and adjustments before use.</span>
+          </div>
+        </div>
         <div class="output-tabs">
           <button class="tab-btn active" onclick="switchTab('code',this)">rule.ts</button>
           <button class="tab-btn" onclick="switchTab('instructions',this)">how to use</button>
@@ -304,7 +310,7 @@
   <div class="modal-content">
     <span class="close">&times;</span>
     <h2>ScaleArch Rule Builder</h2>
-    <p><strong>Version: </strong>v1.0.0</p>
+    <p><strong>Version: </strong>v1.2.0</p>
     <p><strong>Created by: </strong> Uday Verma</p>
     <p><a href="https://github.com/Udayverma0906/ScaleArch" target="_blank">GitHub Repository for Extension</a></p>
     <p><a href="https://www.linkedin.com/in/uday-verma0906/" target="_blank">LinkedIn</a></p>
