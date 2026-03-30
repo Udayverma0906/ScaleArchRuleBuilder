@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>ScaleArch — Rule Builder</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="icon" type="image/png" href="icon.png">
+<link rel="icon" type="image/png" href="assets/images/icon.png">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="style.css">
 </head>
@@ -13,7 +13,7 @@
 
 <header>
   <div class="logo">
-    <div class="logo-mark">SA</div>
+    <div class="logo-mark"><img src="assets/images/icon.png" alt="ScaleArch logo: code brackets with checkmark symbol in purple gradient, representing a linting rule builder tool" height="36px" width="36px"></div>
     <div>
       <div class="logo-text">ScaleArch</div>
       <div class="logo-sub">Rule Builder</div>
@@ -44,7 +44,7 @@
       <div class="panel-header">
         <div class="panel-icon purple">◈</div>
         <div class="panel-title">Rule identity</div>
-        <div class="panel-subtitle">STEP 1–2</div>
+        <div class="panel-subtitle">STEP 1-2</div>
       </div>
       <div class="panel-body">
         <div class="field-row">
@@ -143,13 +143,29 @@
             </div>
           </div>
           <div class="field">
-            <label>Context look-back <span style="color:var(--text-dim);font-size:9px;margin-left:4px;">detect this pattern only near a loop / async / class</span></label>
+            <label>Context mode <span style="color:var(--text-dim);font-size:9px;margin-left:4px;">how to scan — single line or across multiple lines</span></label>
             <select id="contextType">
-              <option value="none">No context required</option>
-              <option value="loop">Inside a loop (for / while / forEach / map)</option>
-              <option value="async">Inside async function</option>
-              <option value="class">Inside a class</option>
+              <option value="none">Single line — pattern must match on one line</option>
+              <option value="loop">Single line — only near a loop (for / while / forEach)</option>
+              <option value="async">Single line — only near an async function</option>
+              <option value="class">Single line — only near a class</option>
+              <option value="multiline-keyword">Multi-line — trigger on a keyword, count pattern across next 25 lines</option>
+              <option value="multiline-count">Multi-line — trigger on first match, count occurrences in next 25 lines</option>
             </select>
+          </div>
+          <div id="multilineFields" style="display:none;flex-direction:column;gap:10px;background:rgba(108,99,255,0.05);border:1px solid rgba(108,99,255,0.18);border-radius:8px;padding:12px;">
+            <div class="field">
+              <label>Anchor keyword <span style="color:var(--text-dim);font-size:9px;margin-left:4px;">rule fires on the line containing this keyword</span></label>
+              <input type="text" id="multilineAnchor" placeholder="e.g. SELECT" autocomplete="off"/>
+            </div>
+            <div class="field">
+              <label>Count keyword <span style="color:var(--text-dim);font-size:9px;margin-left:4px;">count occurrences of this across 25 lines</span></label>
+              <input type="text" id="multilineCount" placeholder="e.g. JOIN"/>
+            </div>
+            <div class="field">
+              <label>Trigger when count exceeds</label>
+              <input type="text" id="multilineThreshold" placeholder="e.g. 5" autocomplete="off"/>
+            </div>
           </div>
         </div>
 
@@ -288,7 +304,7 @@
   <div class="modal-content">
     <span class="close">&times;</span>
     <h2>ScaleArch Rule Builder</h2>
-    <p><strong>Version: </strong>v1.0.3</p>
+    <p><strong>Version: </strong>v1.0.0</p>
     <p><strong>Created by: </strong> Uday Verma</p>
     <p><a href="https://github.com/Udayverma0906/ScaleArch" target="_blank">GitHub Repository for Extension</a></p>
     <p><a href="https://www.linkedin.com/in/uday-verma0906/" target="_blank">LinkedIn</a></p>

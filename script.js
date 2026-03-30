@@ -235,6 +235,17 @@ const PATTERN_LIBRARY = [
     context: 'none',
   },
   {
+    name: 'More than 5 JOINs (multi-line)',
+    category: 'database',
+    pattern: '\\bSELECT\\b',
+    message: 'More than 5 JOINs detected — consider refactoring',
+    hint: 'Queries with 6+ JOINs are expensive. Add indexes on JOIN columns, break into subqueries, or use a view.',
+    context: 'multiline-keyword',
+    multilineAnchor: 'SELECT',
+    multilineCount: 'JOIN',
+    multilineThreshold: 5,
+  },
+  {
     name: 'Subquery inside IN clause',
     category: 'database',
     pattern: '\\bIN\\s*\\(\\s*SELECT\\b',
@@ -469,14 +480,31 @@ function usePattern(idx) {
   document.getElementById('regexPattern').value = p.pattern;
   document.getElementById('contextType').value  = p.context;
 
-  // Fill in message, hint, and category
-  document.getElementById('message').value = p.message;
-  document.getElementById('hint').value = p.hint;
-  document.getElementById('category').value = p.category;
+  // Show/hide multiline fields and fill them if the pattern uses multiline mode
+  const isMulti = p.context && p.context.startsWith('multiline');
+  const mf = document.getElementById('multilineFields');
+  mf.style.display = isMulti ? 'flex' : 'none';
+
+  if (isMulti) {
+    if (p.multilineAnchor)    document.getElementById('multilineAnchor').value    = p.multilineAnchor;
+    if (p.multilineCount)     document.getElementById('multilineCount').value      = p.multilineCount;
+    if (p.multilineThreshold) document.getElementById('multilineThreshold').value  = p.multilineThreshold;
+  }
+
+  // Pre-fill message and hint if empty
+  if (!document.getElementById('message').value.trim()) {
+    document.getElementById('message').value = p.message;
+  }
+  if (!document.getElementById('hint').value.trim()) {
+    document.getElementById('hint').value = p.hint;
+  }
+
+  // Auto-set category if not already set
+  if (!document.getElementById('category').value) {
+    document.getElementById('category').value = p.category;
+  }
 
   showNotif(`✓ Pattern applied — "${p.name}"`);
-
-  // Scroll to the pattern field
   document.getElementById('regexPattern').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
@@ -513,9 +541,23 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('testLine').addEventListener('keydown', e => {
     if (e.key === 'Enter') testRegex();
   });
-  document.getElementById('aiPrompt').addEventListener('keydown', e => {
-    if (e.key === 'Enter') generateRegexWithAI();
+
+  // Show/hide multiline fields when context changes
+  document.getElementById('contextType').addEventListener('change', function() {
+    const isMulti = this.value.startsWith('multiline');
+    const mf = document.getElementById('multilineFields');
+    mf.style.display = isMulti ? 'flex' : 'none';
+
+    // Pre-fill sensible defaults based on which multiline mode
+    if (this.value === 'multiline-keyword') {
+      document.getElementById('multilineAnchor').placeholder = 'e.g. SELECT (anchor line keyword)';
+      document.getElementById('multilineCount').placeholder  = 'e.g. JOIN (keyword to count)';
+    } else if (this.value === 'multiline-count') {
+      document.getElementById('multilineAnchor').placeholder = 'e.g. import (anchor line keyword)';
+      document.getElementById('multilineCount').placeholder  = 'e.g. import (keyword to count)';
+    }
   });
+
 });
 
 // ── GENERATE RULE CODE ──
@@ -557,18 +599,47 @@ function generate() {
 
 // ── REGEX CODE GEN ──
 function generateRegex(cat, name, msg, hint, sev) {
-  const pattern = document.getElementById('regexPattern').value.trim() || 'YOUR_PATTERN_HERE';
-  const context = document.getElementById('contextType').value;
-  const id      = `${cat}/${name}`;
+  const pattern   = document.getElementById('regexPattern').value.trim() || 'YOUR_PATTERN_HERE';
+  const context   = document.getElementById('contextType').value;
+  const anchor    = document.getElementById('multilineAnchor')?.value.trim() || 'SELECT';
+  const countKw   = document.getElementById('multilineCount')?.value.trim()  || 'JOIN';
+  const threshold = parseInt(document.getElementById('multilineThreshold')?.value) || 5;
+  const id        = `${cat}/${name}`;
 
   let testFn = '';
+
   if (context === 'none') {
+    // ── Simple single-line match ──
     testFn = `  test: (line) => /${pattern}/i.test(line),`;
+
+  } else if (context === 'multiline-keyword') {
+    // ── Multi-line: anchor on keyword, count target keyword in next 25 lines ──
+    testFn =
+`  test: (line, allLines, lineIndex) => {
+    // Only trigger on lines containing the anchor keyword
+    if (!/${anchor}/i.test(line)) return false;
+    // Scan the next 25 lines as one string to catch multi-line queries
+    const window = allLines.slice(lineIndex, lineIndex + 25).join(' ');
+    const count  = (window.match(/${countKw}/gi) ?? []).length;
+    return count > ${threshold};
+  },`;
+
+  } else if (context === 'multiline-count') {
+    // ── Multi-line: count pattern occurrences across next 25 lines ──
+    testFn =
+`  test: (line, allLines, lineIndex) => {
+    if (!/${anchor}/i.test(line)) return false;
+    const window = allLines.slice(lineIndex, lineIndex + 25).join(' ');
+    const count  = (window.match(/${pattern}/gi) ?? []).length;
+    return count > ${threshold};
+  },`;
+
   } else {
+    // ── Single-line with look-back context (loop / async / class) ──
     const ctxPattern = {
-      loop:  '\\\\b(for|while|forEach|map|reduce)\\\\b',
-      async: '\\\\basync\\\\b',
-      class: '\\\\bclass\\\\b',
+      loop:  '\\b(for|while|forEach|map|reduce)\\b',
+      async: '\\basync\\b',
+      class: '\\bclass\\b',
     }[context];
     testFn =
 `  test: (line, allLines, lineIndex) => {
@@ -579,7 +650,6 @@ function generateRegex(cat, name, msg, hint, sev) {
     return false;
   },`;
   }
-
   return `// ─── Rule: ${id} ───────────────────────────────────
 // Category : ${cat}
 // Severity : ${sev.replace('vscode.DiagnosticSeverity.', '')}
