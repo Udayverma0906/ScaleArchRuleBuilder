@@ -107,33 +107,26 @@
           </div>
         </div>
 
-         <!-- ══ REGEX SECTION ══ -->
+        <!-- ══ REGEX SECTION ══ -->
         <div id="regex-section" style="display:flex;flex-direction:column;gap:16px;">
 
-         
-          <div class="ai-box">
-            <div class="ai-box-header">
-              <span class="ai-badge">AI</span>
-              <span class="ai-box-title">Regex generator</span>
-              <span class="ai-box-sub">Describe what to detect in plain English</span>
+          <!-- Pattern Library -->
+          <div class="pat-lib-box">
+            <div class="pat-lib-header">
+              <span class="pat-lib-title">Pattern library</span>
+              <input type="text" id="patSearch" class="pat-search" placeholder="Search patterns…" autocomplete="off" oninput="filterPatterns(this.value)"/>
             </div>
-            <div class="ai-box-body">
-              <div class="ai-examples">
-                <span class="ai-example-label">Try:</span>
-                <button class="ai-chip" onclick="setAiPrompt(this)">subquery inside IN clause</button>
-                <button class="ai-chip" onclick="setAiPrompt(this)">hardcoded IP address</button>
-                <button class="ai-chip" onclick="setAiPrompt(this)">more than 5 JOINs in a query</button>
-                <button class="ai-chip" onclick="setAiPrompt(this)">console.log with password or secret</button>
-              </div>
-              <div class="ai-input-row">
-                <input type="text" id="aiPrompt" placeholder="e.g. detect IN (SELECT ...) subquery in SQL strings…" autocomplete="off"/>
-                <button class="ai-gen-btn" id="aiGenBtn" onclick="generateRegexWithAI()">
-                  <span id="aiGenBtnText">Generate</span>
-                </button>
-              </div>
-              <div id="aiResult" style="display:none;"></div>
+            <div class="pat-lib-tabs" id="patTabs">
+              <button class="pat-tab active" onclick="filterCategory('all', this)">All</button>
+              <button class="pat-tab" onclick="filterCategory('database', this)">Database</button>
+              <button class="pat-tab" onclick="filterCategory('security', this)">Security</button>
+              <button class="pat-tab" onclick="filterCategory('performance', this)">Performance</button>
+              <button class="pat-tab" onclick="filterCategory('code-quality', this)">Code quality</button>
             </div>
-          </div> 
+            <div class="pat-lib-list" id="patList">
+              <!-- injected by JS -->
+            </div>
+          </div>
 
           <div class="field">
             <label><span class="required">*</span> Regex pattern <span style="color:var(--text-dim);font-size:9px;margin-left:4px;">will be wrapped in /pattern/i</span></label>

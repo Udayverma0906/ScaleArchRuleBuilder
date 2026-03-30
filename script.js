@@ -10,6 +10,7 @@ let state = {
   generated: '',
 };
 
+
 // ══════════════════════════════════════════════════════
 //  AST NODE DEFINITIONS
 //  Each entry: id, label, description, example code, useful props
@@ -194,119 +195,306 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// ══════════════════════════════════════════════════════
-//  AI REGEX GENERATOR
-// ══════════════════════════════════════════════════════
-function setAiPrompt(btn) {
-  document.getElementById('aiPrompt').value = btn.textContent;
-}
 
-async function generateRegexWithAI() {
-  const prompt = document.getElementById('aiPrompt').value.trim();
-  if (!prompt) {
-    showNotif('⚠ Describe what you want to detect first', true);
+// ══════════════════════════════════════════════════════
+//  PATTERN LIBRARY
+// ══════════════════════════════════════════════════════
+const PATTERN_LIBRARY = [
+
+  // ── DATABASE ──
+  {
+    name: 'SELECT *',
+    category: 'database',
+    pattern: 'select\\s+\\*',
+    message: 'Avoid SELECT * — fetch only the columns you need',
+    hint: 'SELECT * fetches all columns including unused ones, wastes bandwidth and prevents index-only scans.',
+    context: 'none',
+  },
+  {
+    name: 'SELECT without WHERE',
+    category: 'database',
+    pattern: 'select\\s+[\\w\\s,*]+from\\s+\\w+\\s*[`;]',
+    message: 'SELECT without WHERE — possible full table scan',
+    hint: 'Without a WHERE clause every row is scanned. Add a filter or ensure this is intentional.',
+    context: 'none',
+  },
+  {
+    name: 'No LIMIT clause',
+    category: 'database',
+    pattern: '\\bselect\\b(?!.*\\blimit\\b)(?!.*count\\s*\\()',
+    message: 'No LIMIT clause — risk of fetching a huge result set',
+    hint: 'Always paginate results. Add LIMIT (and OFFSET) to control how many rows are returned.',
+    context: 'none',
+  },
+  {
+    name: 'Leading wildcard LIKE',
+    category: 'database',
+    pattern: 'like\\s+[\x27\x22%]%',
+    message: "Leading wildcard LIKE '%...' disables index usage",
+    hint: "A leading % forces a full scan. Use full-text search or a search engine for this pattern.",
+    context: 'none',
+  },
+  {
+    name: 'Subquery inside IN clause',
+    category: 'database',
+    pattern: '\\bIN\\s*\\(\\s*SELECT\\b',
+    message: 'Subquery inside IN() — consider EXISTS or a JOIN instead',
+    hint: 'IN (SELECT ...) is often slower than EXISTS() or a JOIN, especially on large datasets. The optimizer may execute the subquery once per row.',
+    context: 'none',
+  },
+  {
+    name: 'SQL query in a loop (N+1)',
+    category: 'database',
+    pattern: '\\bselect\\b',
+    message: 'SQL query inside a loop — classic N+1 problem',
+    hint: 'Each iteration fires a separate DB round-trip. Use a JOIN, batch query (WHERE id IN (...)), or a dataloader instead.',
+    context: 'loop',
+  },
+  {
+    name: 'DELETE without WHERE',
+    category: 'database',
+    pattern: '\\bDELETE\\s+FROM\\s+\\w+\\s*[`;]',
+    message: 'DELETE without WHERE — this will wipe the entire table',
+    hint: 'A DELETE without a WHERE clause deletes every row. Always add a WHERE clause unless you explicitly want to truncate.',
+    context: 'none',
+  },
+  {
+    name: 'UPDATE without WHERE',
+    category: 'database',
+    pattern: '\\bUPDATE\\s+\\w+\\s+SET\\b(?!.*\\bWHERE\\b)',
+    message: 'UPDATE without WHERE — will update every row in the table',
+    hint: 'A WHERE clause is almost always required on UPDATE. Double-check this is intentional.',
+    context: 'none',
+  },
+
+  // ── SECURITY ──
+  {
+    name: 'Hardcoded API key or secret',
+    category: 'security',
+    pattern: '(password|secret|api_key|apikey|token|auth)\\s*[:=]\\s*[\x27\x22][^\x27\x22]{6,}',
+    message: 'Possible hardcoded secret detected',
+    hint: 'Move secrets to environment variables or a secrets manager (AWS SSM, HashiCorp Vault).',
+    context: 'none',
+  },
+  {
+    name: 'eval() usage',
+    category: 'security',
+    pattern: '\\beval\\s*\\(',
+    message: 'eval() is a security risk — avoid it',
+    hint: 'eval() executes arbitrary code and can be exploited via injection. Use JSON.parse() for data or restructure the logic.',
+    context: 'none',
+  },
+  {
+    name: 'Hardcoded IP address',
+    category: 'security',
+    pattern: '\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b',
+    message: 'Hardcoded IP address detected',
+    hint: 'Hardcoded IPs make deployments fragile and may expose internal infrastructure. Use environment variables or service discovery.',
+    context: 'none',
+  },
+  {
+    name: 'MD5 hashing (weak)',
+    category: 'security',
+    pattern: '\\bmd5\\s*\\(',
+    message: 'MD5 is cryptographically broken — use SHA-256 or bcrypt',
+    hint: 'MD5 collisions are trivial to generate. Use crypto.subtle.digest("SHA-256", ...) for hashing or bcrypt for passwords.',
+    context: 'none',
+  },
+  {
+    name: 'console.log with sensitive words',
+    category: 'security',
+    pattern: '(password|secret|api_key|apikey|token|auth)\\s*[:=]\\s*[\x27\x22][^\x27\x22]{6,}',
+    message: 'Logging potentially sensitive data',
+    hint: 'Logging secrets or credentials can expose them in log aggregators. Redact sensitive fields before logging.',
+    context: 'none',
+  },
+  {
+    name: 'SQL string concatenation (injection risk)',
+    category: 'security',
+    pattern: '(SELECT|INSERT|UPDATE|DELETE).*\\+\\s*(\\w+|[\x27\x22])',
+    message: 'SQL built with string concatenation — injection risk',
+    hint: 'Building SQL with + opens the door to SQL injection. Use parameterised queries or a query builder with bound parameters.',
+    context: 'none',
+  },
+
+  // ── PERFORMANCE ──
+  {
+    name: 'Synchronous fs call',
+    category: 'performance',
+    pattern: '\\bfs\\.(readFileSync|writeFileSync|existsSync|readdirSync|mkdirSync)\\b',
+    message: 'Synchronous fs call blocks the event loop',
+    hint: 'Use the async version: readFileSync → readFile, writeFileSync → writeFile. Sync calls block all other requests.',
+    context: 'none',
+  },
+  {
+    name: 'JSON.parse in a loop',
+    category: 'performance',
+    pattern: 'JSON\\.parse\\s*\\(',
+    message: 'JSON.parse() inside a loop — expensive repeated parsing',
+    hint: 'Parse once outside the loop and reuse the result.',
+    context: 'loop',
+  },
+  {
+    name: 'setTimeout with 0ms',
+    category: 'performance',
+    pattern: 'setTimeout\\s*\\(.*,\\s*0\\s*\\)',
+    message: 'setTimeout(fn, 0) is unreliable — use queueMicrotask()',
+    hint: '0ms delay is not guaranteed to be immediate and adds scheduler overhead. Use queueMicrotask() for microtask scheduling.',
+    context: 'none',
+  },
+  {
+    name: 'new object inside loop',
+    category: 'performance',
+    pattern: '(new\\s+\\w+\\(|\\[\\s*\\]|\\{\\s*\\})',
+    message: 'Object/array created inside a loop — GC pressure',
+    hint: 'Allocate outside the loop and reuse or clear per iteration to reduce garbage collection overhead.',
+    context: 'loop',
+  },
+  {
+    name: 'await inside loop (serial)',
+    category: 'performance',
+    pattern: '\\bawait\\b',
+    message: 'await inside a loop runs promises serially — use Promise.all()',
+    hint: 'Each await blocks the next iteration. Collect promises in an array and resolve with Promise.all([...]) for parallel execution.',
+    context: 'loop',
+  },
+  {
+    name: 'console.log left in code',
+    category: 'performance',
+    pattern: 'console\\.(log|warn|info)\\s*\\(',
+    message: 'console.log() left in code — remove before production',
+    hint: 'Use a proper logger (winston, pino) that can be disabled in production via log level.',
+    context: 'none',
+  },
+
+  // ── CODE QUALITY ──
+  {
+    name: 'TODO / FIXME comment',
+    category: 'code-quality',
+    pattern: '\\b(TODO|FIXME|HACK|XXX)\\b',
+    message: 'TODO/FIXME comment left in code',
+    hint: 'Track outstanding work in your issue tracker, not in code comments. TODOs in code often get forgotten.',
+    context: 'none',
+  },
+  {
+    name: 'Debugger statement',
+    category: 'code-quality',
+    pattern: '\\bdebugger\\b',
+    message: 'debugger statement left in code',
+    hint: 'Remove debugger statements before committing. They pause execution in any browser with DevTools open.',
+    context: 'none',
+  },
+  {
+    name: 'var declaration',
+    category: 'code-quality',
+    pattern: '\\bvar\\s+',
+    message: 'Avoid var — use const or let instead',
+    hint: 'var is function-scoped and hoisted, leading to subtle bugs. Use const by default and let when reassignment is needed.',
+    context: 'none',
+  },
+  {
+    name: 'Double equals (==)',
+    category: 'code-quality',
+    pattern: '(?<!=)={2}(?!=)',
+    message: 'Loose equality (==) — use strict equality (===) instead',
+    hint: '== performs type coercion which leads to unexpected results (e.g. 0 == "" is true). Always use === for comparisons.',
+    context: 'none',
+  },
+  {
+    name: 'Magic number',
+    category: 'code-quality',
+    pattern: '(?<![a-zA-Z0-9_.])(?!0\b|1\b|-1\b)\d{2,}(?![a-zA-Z0-9_])',
+    message: 'Magic number detected — extract to a named constant',
+    hint: 'Numbers with no explanation make code hard to understand. Extract to: const MAX_RETRIES = 5 and reference the constant.',
+    context: 'none',
+  },
+  {
+    name: 'Raw fetch() call',
+    category: 'code-quality',
+    pattern: '\\bfetch\\s*\\(',
+    message: 'Raw fetch() — use your internal HttpClient wrapper instead',
+    hint: 'Direct fetch() calls bypass auth token injection, retry logic, and error logging. Use the shared HttpClient from your core library.',
+    context: 'none',
+  },
+];
+
+let activeCategory = 'all';
+let activeSearch   = '';
+
+function buildPatternList() {
+  const list = document.getElementById('patList');
+  const filtered = PATTERN_LIBRARY.filter(p => {
+    const catMatch  = activeCategory === 'all' || p.category === activeCategory;
+    const term      = activeSearch.toLowerCase();
+    const textMatch = !term ||
+      p.name.toLowerCase().includes(term) ||
+      p.category.toLowerCase().includes(term) ||
+      p.pattern.toLowerCase().includes(term) ||
+      p.message.toLowerCase().includes(term);
+    return catMatch && textMatch;
+  });
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="pat-empty">No patterns match your search.</div>';
     return;
   }
 
-  const btn     = document.getElementById('aiGenBtn');
-  const btnText = document.getElementById('aiGenBtnText');
-  const result  = document.getElementById('aiResult');
-
-  btn.disabled  = true;
-  btn.classList.add('loading');
-  btnText.textContent = 'Thinking…';
-  result.style.display = 'none';
-
-  const systemPrompt = `You are a regex expert for a VS Code linting extension called ScaleArch.
-The user will describe a code pattern they want to detect in a single line of source code.
-You must respond ONLY with a valid JSON object — no markdown, no explanation outside JSON.
-
-JSON format:
-{
-  "pattern": "the raw regex pattern string (no /slashes/ or flags)",
-  "explanation": "one sentence: what this pattern matches and why",
-  "example": "a short 1-2 line code example that WOULD trigger the rule",
-  "nonExample": "a short 1-2 line code example that would NOT trigger the rule"
+  list.innerHTML = filtered.map((p, i) => `
+    <div class="pat-item" onclick="usePattern(${PATTERN_LIBRARY.indexOf(p)})">
+      <span class="pat-item-name">${p.name}</span>
+      <span class="pat-item-cat ${p.category}">${p.category}</span>
+      <span class="pat-item-pattern">${escapeHtml(p.pattern)}</span>
+      <button class="pat-item-use" onclick="event.stopPropagation();usePattern(${PATTERN_LIBRARY.indexOf(p)})">Use →</button>
+    </div>
+  `).join('');
 }
 
-Rules for the pattern:
-- Must be a valid JavaScript regex pattern string
-- Do NOT include leading/trailing slashes or flags (the extension adds /pattern/i)
-- Prefer \\b word boundaries for keywords
-- Keep it focused on single-line detection
-- If the pattern needs multi-line context (like counting JOINs across lines), explain that in the explanation and give the best single-line approximation`;
-
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: `Generate a regex pattern to detect: ${prompt}` }],
-      }),
-    });
-
-    const data = await response.json();
-    const text = data.content?.[0]?.text ?? '';
-
-    let parsed;
-    try {
-      const clean = text.replace(/```json|```/g, '').trim();
-      parsed = JSON.parse(clean);
-    } catch {
-      throw new Error('Could not parse AI response. Try rephrasing your description.');
-    }
-
-    // Render result
-    result.style.display = 'block';
-    result.className = 'success';
-    result.innerHTML = `
-      <div class="ai-result-pattern">
-        <span class="ai-result-label">Pattern</span>
-        <span class="ai-result-code" id="generatedPattern">${escapeHtml(parsed.pattern)}</span>
-        <button class="ai-use-btn" onclick="useGeneratedPattern()">Use →</button>
-      </div>
-      <div class="ai-result-explain">${escapeHtml(parsed.explanation)}</div>
-      <div class="ai-result-example">
-        <div class="ai-result-example-label">Would trigger on</div>
-        <div class="ai-result-example-code">${escapeHtml(parsed.example)}</div>
-      </div>
-      <div class="ai-result-example" style="margin-top:6px;">
-        <div class="ai-result-example-label">Would NOT trigger on</div>
-        <div class="ai-result-example-code" style="color:var(--accent3);background:rgba(67,224,176,0.05);border-color:rgba(67,224,176,0.15);">${escapeHtml(parsed.nonExample)}</div>
-      </div>
-    `;
-
-    updateStepPills(2);
-
-  } catch (err) {
-    result.style.display = 'block';
-    result.className = 'error';
-    result.textContent = '✗ ' + (err.message || 'Something went wrong. Try again.');
-  } finally {
-    btn.disabled  = false;
-    btn.classList.remove('loading');
-    btnText.textContent = 'Generate';
-  }
+function filterCategory(cat, btn) {
+  activeCategory = cat;
+  document.querySelectorAll('.pat-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  buildPatternList();
 }
 
-function useGeneratedPattern() {
-  const patternEl = document.getElementById('generatedPattern');
-  if (patternEl) {
-    document.getElementById('regexPattern').value = patternEl.textContent;
-    showNotif('✓ Pattern applied — test it below');
+function filterPatterns(val) {
+  activeSearch = val;
+  buildPatternList();
+}
+
+function usePattern(idx) {
+  const p = PATTERN_LIBRARY[idx];
+  if (!p) return;
+
+  // Fill in pattern and context
+  document.getElementById('regexPattern').value = p.pattern;
+  document.getElementById('contextType').value  = p.context;
+
+  // Pre-fill message and hint if empty
+  if (!document.getElementById('message').value.trim()) {
+    document.getElementById('message').value = p.message;
   }
+  if (!document.getElementById('hint').value.trim()) {
+    document.getElementById('hint').value = p.hint;
+  }
+
+  // Auto-set category if not already set
+  if (!document.getElementById('category').value) {
+    document.getElementById('category').value = p.category;
+  }
+
+  showNotif(`✓ Pattern applied — "${p.name}"`);
+
+  // Scroll to the pattern field
+  document.getElementById('regexPattern').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 function escapeHtml(str) {
   return String(str)
     .replace(/&/g,'&amp;')
     .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;');
+    .replace(/>/g,'&gt;');
 }
+
 
 // ── TEST REGEX ──
 function testRegex() {
@@ -606,8 +794,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Build AST node picker
+  // Build AST node picker and pattern library
   buildNodePicker();
+  buildPatternList();
 
   // Init
   setType('regex');
