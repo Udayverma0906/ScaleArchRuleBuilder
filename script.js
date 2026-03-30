@@ -469,18 +469,10 @@ function usePattern(idx) {
   document.getElementById('regexPattern').value = p.pattern;
   document.getElementById('contextType').value  = p.context;
 
-  // Pre-fill message and hint if empty
-  if (!document.getElementById('message').value.trim()) {
-    document.getElementById('message').value = p.message;
-  }
-  if (!document.getElementById('hint').value.trim()) {
-    document.getElementById('hint').value = p.hint;
-  }
-
-  // Auto-set category if not already set
-  if (!document.getElementById('category').value) {
-    document.getElementById('category').value = p.category;
-  }
+  // Fill in message, hint, and category
+  document.getElementById('message').value = p.message;
+  document.getElementById('hint').value = p.hint;
+  document.getElementById('category').value = p.category;
 
   showNotif(`✓ Pattern applied — "${p.name}"`);
 
