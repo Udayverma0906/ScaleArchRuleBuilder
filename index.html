@@ -19,7 +19,10 @@
       <div class="logo-sub">Rule Builder</div>
     </div>
   </div>
-  <button id="infoBtn" class="info-btn">Details</button>
+  <div class="header-controls">
+    <button id="themeToggle" class="theme-toggle" title="Toggle theme"></button>
+    <button id="infoBtn" class="info-btn">Details</button>
+  </div>
 </header>
 
 <div class="hero">
@@ -75,10 +78,10 @@
         <div class="field">
           <label><span class="required">*</span> Severity</label>
           <div class="severity-grid">
-            <button class="sev-btn selected" data-sev="error"   onclick="setSev('error')">  <span class="dot"></span>Error</button>
-            <button class="sev-btn"          data-sev="warning" onclick="setSev('warning')"><span class="dot"></span>Warning</button>
-            <button class="sev-btn"          data-sev="info"    onclick="setSev('info')">   <span class="dot"></span>Info</button>
-            <button class="sev-btn"          data-sev="hint"    onclick="setSev('hint')">   <span class="dot"></span>Hint</button>
+            <button class="sev-btn selected" data-sev="error"   onclick="setSev('error')">  <span class="symbol">❌</span>Error</button>
+            <button class="sev-btn"          data-sev="warning" onclick="setSev('warning')"><span class="symbol">⚠️</span>Warning</button>
+            <button class="sev-btn"          data-sev="info"    onclick="setSev('info')">   <span class="symbol">ℹ️</span>Info</button>
+            <button class="sev-btn"          data-sev="hint"    onclick="setSev('hint')">   <span class="symbol">💡</span>Hint</button>
           </div>
         </div>
       </div>
@@ -310,13 +313,14 @@
   <div class="modal-content">
     <span class="close">&times;</span>
     <h2>ScaleArch Rule Builder</h2>
-    <p><strong>Version: </strong>v1.2.0</p>
+    <p><strong>Version: </strong>v1.3.0</p>
     <p><strong>Created by: </strong> Uday Verma</p>
     <p><a href="https://github.com/Udayverma0906/ScaleArch" target="_blank">GitHub Repository for Extension</a></p>
     <p><a href="https://www.linkedin.com/in/uday-verma0906/" target="_blank">LinkedIn</a></p>
   </div>
 </div>
 
+<script src="ast-nodes.js" defer></script>
 <script src="script.js" defer></script>
 </body>
 </html>
