@@ -113,6 +113,17 @@
         <!-- ══ REGEX SECTION ══ -->
         <div id="regex-section" style="display:flex;flex-direction:column;gap:16px;">
 
+          <div class="field">
+  <label>Target language(s) <span style="color:var(--text-dim);font-size:9px;margin-left:4px;">leave blank to run on all languages</span></label>
+  <select id="ruleLanguage">
+    <option value="all">All languages (JS, TS, Python, Java, C++)</option>
+    <option value="js-ts">JS / TS only</option>
+    <option value="python">Python only</option>
+    <option value="java">Java only</option>
+    <option value="cpp">C / C++ only</option>
+  </select>
+</div>
+
           <!-- Pattern Library -->
           <div class="pat-lib-box">
             <div class="pat-lib-header">

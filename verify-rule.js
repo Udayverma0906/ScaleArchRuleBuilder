@@ -43,6 +43,23 @@ function generateRegexVerificationPrompt(cat, name, msg, hint, sev) {
   const countKw   = document.getElementById('multilineCount')?.value.trim();
   const threshold = document.getElementById('multilineThreshold')?.value.trim();
 
+  // Language targeting (v0.2)
+  const langValue = document.getElementById('ruleLanguage')?.value || 'all';
+  const langLabels = {
+    'all':    'All languages (JS, TS, Python, Java, C++)',
+    'js-ts':  'JS / TS only',
+    'python': 'Python only',
+    'java':   'Java only',
+    'cpp':    'C / C++ only',
+  };
+  const langArrays = {
+    'all':    null,
+    'js-ts':  "['typescript', 'javascript', 'typescriptreact', 'javascriptreact']",
+    'python': "['python']",
+    'java':   "['java']",
+    'cpp':    "['cpp', 'c']",
+  };
+
   const contextDescriptions = {
     'none':               'Single line — the pattern must match on the same line',
     'loop':               'Single line — only flag if the pattern appears within 5 lines AFTER a for/while/forEach/map loop',
@@ -62,13 +79,16 @@ function generateRegexVerificationPrompt(cat, name, msg, hint, sev) {
   const contextIsMultiline = context.startsWith('multiline');
 
   return `You are verifying a VS Code linting rule for a tool called ScaleArch.
-ScaleArch analyzes TypeScript/JavaScript code and flags bad patterns using custom rules.
+ScaleArch is a VS Code extension that runs static analysis on code files.
+As of v0.2, ScaleArch supports: TypeScript, JavaScript, Python, Java, and C/C++.
+Rules can be scoped to specific languages using the optional "languages" field.
 
-I have built a rule using a Rule Builder UI. Please verify that:
+I built this rule using the ScaleArch Rule Builder UI. Please verify:
 1. The regex pattern is correct and does what I intend
-2. The test function logic is correct for the context mode I selected
-3. Point out any false positives or false negatives
-4. If anything is wrong, give me the corrected version in the EXACT same format
+2. The test function logic matches the context mode I selected
+3. The languages field is correct for the target language
+4. Point out any false positives or false negatives
+5. If anything is wrong, give the corrected version in the EXACT same format
 
 ═══════════════════════════════════════
 RULE DETAILS (filled in by user)
@@ -83,6 +103,7 @@ Context   : ${contextDescriptions[context] || context}
 ${contextIsMultiline ? `Anchor    : ${anchor}
 Count kw  : ${countKw}
 Threshold : ${threshold}` : ''}
+Language  : ${langLabels[langValue] || 'All languages'}
 
 ═══════════════════════════════════════
 GENERATED CODE TO VERIFY
@@ -92,7 +113,7 @@ ${state.generated || '(generate the rule first, then click Verify with AI)'}
 ═══════════════════════════════════════
 SCALEARCH RULE STRUCTURE — DO NOT CHANGE THIS FORMAT
 ═══════════════════════════════════════
-A valid ScaleArch regex rule must match this exact structure:
+A valid ScaleArch regex rule object looks like this:
 
 {
   id: 'category/rule-name',
@@ -101,6 +122,15 @@ A valid ScaleArch regex rule must match this exact structure:
   message: 'short message shown in squiggly tooltip',
   hint: 'longer explanation shown on hover',
 
+  // OPTIONAL — omit to run on ALL languages.
+  // Include to restrict the rule to specific file types.
+  // Valid values: 'typescript' | 'javascript' | 'typescriptreact' | 'javascriptreact'
+  //               'python' | 'java' | 'cpp' | 'c'
+  languages: ['python'],          // example: Python only
+  // languages: ['java'],         // example: Java only
+  // languages: ['cpp', 'c'],     // example: C and C++
+  // languages: ['typescript', 'javascript', 'typescriptreact', 'javascriptreact'], // JS/TS only
+
   // FOR SINGLE LINE (context: none):
   test: (line) => /pattern/i.test(line),
 
@@ -108,7 +138,7 @@ A valid ScaleArch regex rule must match this exact structure:
   test: (line, allLines, lineIndex) => {
     if (!/pattern/i.test(line)) return false;
     for (let i = Math.max(0, lineIndex - 5); i < lineIndex; i++) {
-      if (/\\b(for|while|forEach|map|reduce)\\b/.test(allLines[i])) return true;
+      if (/\b(for|while|forEach|map|reduce)\b/.test(allLines[i])) return true;
     }
     return false;
   },
@@ -131,9 +161,10 @@ A valid ScaleArch regex rule must match this exact structure:
 }
 
 ═══════════════════════════════════════
-EXAMPLE OF A CORRECT RULE (for reference)
+EXAMPLES OF CORRECT RULES (for reference)
 ═══════════════════════════════════════
-// Rule: flag SQL queries inside loops (N+1 problem)
+// Example 1: JS/TS rule — flag SQL queries inside loops (N+1 problem)
+// No languages field = runs on all supported languages
 {
   id: 'database/query-in-loop',
   category: 'database',
@@ -141,15 +172,37 @@ EXAMPLE OF A CORRECT RULE (for reference)
   message: 'SQL query inside a loop — classic N+1 problem',
   hint: 'Each iteration fires a separate DB round-trip. Use a JOIN or batch query instead.',
   test: (line, allLines, lineIndex) => {
-    if (!/\\bselect\\b/i.test(line)) return false;
+    if (!/\bselect\b/i.test(line)) return false;
     for (let i = Math.max(0, lineIndex - 5); i < lineIndex; i++) {
-      if (/\\b(for|while|forEach|map|reduce)\\b/.test(allLines[i])) return true;
+      if (/\b(for|while|forEach|map|reduce)\b/.test(allLines[i])) return true;
     }
     return false;
   },
 }
 
-// Rule: flag queries with more than 5 JOINs (multi-line)
+// Example 2: Python-only rule — bare except catches everything
+{
+  id: 'py/bare-except',
+  category: 'code-quality',
+  severity: vscode.DiagnosticSeverity.Warning,
+  message: 'Bare except: catches everything including KeyboardInterrupt',
+  hint: 'Specify the exception: except ValueError: or except (TypeError, ValueError):',
+  languages: ['python'],
+  test: (line) => /^\s*except\s*:/.test(line),
+}
+
+// Example 3: Java-only rule — System.out.println left in code
+{
+  id: 'java/system-out-println',
+  category: 'performance',
+  severity: vscode.DiagnosticSeverity.Information,
+  message: 'System.out.println() left in code — use a logger instead',
+  hint: 'System.out.println is synchronous and has no log levels. Use SLF4J or Log4j2.',
+  languages: ['java'],
+  test: (line) => /System\s*\.\s*out\s*\.\s*print(ln)?\s*\(/.test(line),
+}
+
+// Example 4: Multi-line rule — more than 5 JOINs in a query
 {
   id: 'database/max-joins-five',
   category: 'database',
@@ -168,15 +221,19 @@ EXAMPLE OF A CORRECT RULE (for reference)
 WHAT I NEED FROM YOU
 ═══════════════════════════════════════
 1. Is the regex pattern /${pattern}/i correct for what the rule intends?
-   - Give 3 examples that SHOULD trigger it
-   - Give 2 examples that should NOT trigger it (false positives check)
+   - Give 3 code examples that SHOULD trigger it (in the target language: ${langLabels[langValue] || 'all languages'})
+   - Give 2 code examples that should NOT trigger it (false positives check)
 
-2. Is the test function logic correct for the context mode "${context}"?
+2. Is the test function logic correct for context mode "${context}"?
 
-3. If anything is wrong, provide the corrected rule in the EXACT format shown above.
+3. Is the languages field correct for "${langLabels[langValue] || 'All languages'}"?
+   - Current value in generated code: ${langArrays[langValue] ? `languages: ${langArrays[langValue]}` : '(no languages field — runs on all languages)'}
+   - Should it be more specific or broader?
+
+4. If anything is wrong, provide the corrected rule in the EXACT format shown above.
    Do NOT change the structure — only fix what is incorrect.
 
-4. One-line summary: VALID or NEEDS FIX, and why.`;
+5. One-line summary: VALID or NEEDS FIX, and why.`;
 }
 
 function generateAstVerificationPrompt(cat, name, msg, hint, sev) {

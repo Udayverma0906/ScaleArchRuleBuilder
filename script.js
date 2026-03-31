@@ -132,10 +132,15 @@ function buildPatternList() {
     return;
   }
 
+  const langBadgeLabel = { all: 'all', 'js-ts': 'JS/TS', python: 'Python', java: 'Java', cpp: 'C/C++' };
+
   list.innerHTML = filtered.map((p, i) => `
     <div class="pat-item" onclick="usePattern(${PATTERN_LIBRARY.indexOf(p)})">
       <span class="pat-item-name">${p.name}</span>
-      <span class="pat-item-cat ${p.category}">${p.category}</span>
+      <div class="pat-item-meta">
+        <span class="pat-item-cat ${p.category}">${p.category}</span>
+        <span class="pat-item-lang pat-lang-${p.language || 'all'}">${langBadgeLabel[p.language || 'all']}</span>
+      </div>
       <span class="pat-item-pattern">${escapeHtml(p.pattern)}</span>
       <button class="pat-item-use" onclick="event.stopPropagation();usePattern(${PATTERN_LIBRARY.indexOf(p)})">Use →</button>
     </div>
@@ -184,6 +189,12 @@ function usePattern(idx) {
   // Auto-set category if not already set
   if (!document.getElementById('category').value) {
     document.getElementById('category').value = p.category;
+  }
+
+  // Auto-set language dropdown if the pattern has a language
+  const langEl = document.getElementById('ruleLanguage');
+  if (langEl && p.language) {
+    langEl.value = p.language;
   }
 
   showNotif(`✓ Pattern applied — "${p.name}"`);
@@ -317,6 +328,18 @@ function generateRegex(cat, name, msg, hint, sev) {
 
   let testFn = '';
 
+   const langValue = document.getElementById('ruleLanguage').value;
+  const langMap = {
+    'all':    null,   // no languages field — runs on everything
+    'js-ts':  `['typescript', 'javascript', 'typescriptreact', 'javascriptreact']`,
+    'python': `['python']`,
+    'java':   `['java']`,
+    'cpp':    `['cpp', 'c']`,
+  };
+  const languagesLine = langMap[langValue]
+    ? `  languages: ${langMap[langValue]},\n`
+    : '';
+
   if (context === 'none') {
     // ── Simple single-line match ──
     testFn = `  test: (line) => /${pattern}/i.test(line),`;
@@ -370,7 +393,7 @@ function generateRegex(cat, name, msg, hint, sev) {
   severity: ${sev},
   message: '${msg.replace(/'/g, "\\'")}',
   hint: '${(hint || msg).replace(/'/g, "\\'")}',
-${testFn}
+${languagesLine}${testFn}
 },`;
 }
 
