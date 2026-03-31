@@ -243,14 +243,28 @@
       <div class="output-header">
         <div style="display: flex; flex-direction: column; gap: 8px;">
           <div class="output-title">Generated code</div>
-          <div class="warning-box">
+          <!-- <div class="warning-box">
             <span class="warning-icon">⚠️</span>
             <span class="warning-text">This generated code provides a basic skeleton structure. It may not include complete logic and requires manual review and adjustments before use.</span>
+          </div> -->
+
+          <div class="warning-box">
+            <span class="warning-icon">⚠️</span>
+            <span class="warning-text">
+              The generated code will be complete, but may not fully match your requirements. Review and verify before use.
+              <button class="verify-btn" onclick="openVerification()" id="verifyBtn" disabled>
+                Verify with Claude →
+              </button>
+            </span>
           </div>
+
         </div>
         <div class="output-tabs">
           <button class="tab-btn active" onclick="switchTab('code',this)">rule.ts</button>
-          <button class="tab-btn" onclick="switchTab('instructions',this)">how to use</button>
+          <button class="tab-btn tooltip" onclick="switchTab('instructions',this)">
+            ❓
+            <span class="tooltip-text">Click here for instructions</span>
+          </button>
         </div>
         <button class="copy-btn" id="copyBtn" onclick="copyCode()">Copy</button>
       </div>
@@ -307,20 +321,26 @@
 
 </div>
 
-<div class="notif" id="notif">✓ Copied to clipboard</div>
+<div class="notif" id="notif">
+  <span id="notif-text">✓ Copied to clipboard</span>
+  <div id="notif-progress" class="progress-bar"></div>
+</div>
 
 <div id="infoModal" class="modal">
   <div class="modal-content">
     <span class="close">&times;</span>
     <h2>ScaleArch Rule Builder</h2>
-    <p><strong>Version: </strong>v1.3.0</p>
+    <p><strong>Version: </strong>v2.1.0</p>
     <p><strong>Created by: </strong> Uday Verma</p>
     <p><a href="https://github.com/Udayverma0906/ScaleArch" target="_blank">GitHub Repository for Extension</a></p>
     <p><a href="https://www.linkedin.com/in/uday-verma0906/" target="_blank">LinkedIn</a></p>
   </div>
 </div>
 
-<script src="ast-nodes.js" defer></script>
 <script src="script.js" defer></script>
+<script src="regex-pattern.js" defer></script>
+<script src="ast-nodes.js" defer></script>
+<script src="verify-rule.js" defer></script>
+
 </body>
 </html>

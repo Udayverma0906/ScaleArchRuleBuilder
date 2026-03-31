@@ -49,6 +49,29 @@
     overflow-x: hidden;
   }
 
+  /* ── CUSTOM SCROLLBAR ── */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--surface);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-bright);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: var(--surface);
+  }
+
   /* ── GRID BACKGROUND ── */
   body::before {
     content: '';
@@ -346,7 +369,7 @@
     select, input[type="text"], textarea { font-size: 14px; padding: 14px 16px; }
     .test-btn { font-size: 13px; padding: 14px 20px; }
     .generate-btn { font-size: 15px; }
-    .output-title { font-size: 14px; }
+    .output-title { font-size: 24px; }
     .tab-btn { font-size: 12px; }
     .copy-btn { font-size: 12px; }
     pre { font-size: 13.5px; }
@@ -607,7 +630,7 @@
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 16px;
-    overflow: hidden;
+    overflow: visible;
     min-width: 0;
     width: 100%;
   }
@@ -616,11 +639,12 @@
     display: flex; align-items: flex-start; gap: 12px;
     padding: 16px 24px;
     border-bottom: 1px solid var(--border);
+    border-radius: 16px 16px 0 0; 
     background: var(--surface2);
   }
 
   .output-title {
-    font-size: 13px; font-weight: 700; color: var(--text);
+    font-size: 20px; font-weight: 700; color: var(--text);
   }
 
   .warning-box {
@@ -632,7 +656,7 @@
     border-radius: 6px;
     padding: 8px 12px;
     margin-top: 8px;
-    max-width: 300px;
+    max-width: 400px;
   }
 
   .warning-icon {
@@ -845,6 +869,25 @@
     min-width: 0;
   }
 
+  /* VERIFY BUTTON */
+  .verify-btn {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: #0a0a0f;
+  background: var(--warn);
+  border: none;
+  border-radius: 4px;
+  padding: 3px 10px;
+  cursor: pointer;
+  margin-left: 8px;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+
+.verify-btn:hover:not(:disabled) { opacity: 0.85; }
+.verify-btn:disabled { opacity: 0.4; cursor: not-allowed; background: var(--text-dim); color: var(--text); }
+
   /* ── MOBILE BREAKPOINTS ── */
   @media (max-width: 600px) {
     /* Stack the two-col field row */
@@ -928,9 +971,21 @@
     opacity: 0;
     transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .notif.show { transform: translateY(0); opacity: 1; }
+
+  .progress-bar {
+    width: 0%;
+    height: 3px;
+    background: #4CAF50;
+    border-radius: 2px;
+    margin-top: 8px;
+    transition: width 1s linear;
+  }
 
   /* ── AST HELPER ── */
   .ast-hint {
@@ -1330,6 +1385,54 @@
     padding: 3px 8px;
     border-radius: 4px;
   }
+
+  /* TOOLTIP */
+  .tooltip {
+  position: relative;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+/* Tooltip text */
+.tooltip-text {
+  visibility: hidden;
+  opacity: 0;
+  width: max-content;
+  max-width: 200px;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+
+  position: absolute;
+  bottom: 125%; /* above button */
+  left: 50%;
+  transform: translateX(-50%);
+
+  transition: opacity 0.2s ease;
+  z-index: 10;
+}
+
+/* Arrow */
+.tooltip-text::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: #333 transparent transparent transparent;
+}
+
+/* Show on hover */
+.tooltip:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
 
   /* ══ PATTERN LIBRARY ══ */
   .pat-lib-box {

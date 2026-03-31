@@ -111,239 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-// ══════════════════════════════════════════════════════
-//  PATTERN LIBRARY
-// ══════════════════════════════════════════════════════
-const PATTERN_LIBRARY = [
-
-  // ── DATABASE ──
-  {
-    name: 'SELECT *',
-    category: 'database',
-    pattern: 'select\\s+\\*',
-    message: 'Avoid SELECT * — fetch only the columns you need',
-    hint: 'SELECT * fetches all columns including unused ones, wastes bandwidth and prevents index-only scans.',
-    context: 'none',
-  },
-  {
-    name: 'SELECT without WHERE',
-    category: 'database',
-    pattern: 'select\\s+[\\w\\s,*]+from\\s+\\w+\\s*[`;]',
-    message: 'SELECT without WHERE — possible full table scan',
-    hint: 'Without a WHERE clause every row is scanned. Add a filter or ensure this is intentional.',
-    context: 'none',
-  },
-  {
-    name: 'No LIMIT clause',
-    category: 'database',
-    pattern: '\\bselect\\b(?!.*\\blimit\\b)(?!.*count\\s*\\()',
-    message: 'No LIMIT clause — risk of fetching a huge result set',
-    hint: 'Always paginate results. Add LIMIT (and OFFSET) to control how many rows are returned.',
-    context: 'none',
-  },
-  {
-    name: 'Leading wildcard LIKE',
-    category: 'database',
-    pattern: 'like\\s+[\x27\x22%]%',
-    message: "Leading wildcard LIKE '%...' disables index usage",
-    hint: "A leading % forces a full scan. Use full-text search or a search engine for this pattern.",
-    context: 'none',
-  },
-  {
-    name: 'More than 5 JOINs (multi-line)',
-    category: 'database',
-    pattern: '\\bSELECT\\b',
-    message: 'More than 5 JOINs detected — consider refactoring',
-    hint: 'Queries with 6+ JOINs are expensive. Add indexes on JOIN columns, break into subqueries, or use a view.',
-    context: 'multiline-keyword',
-    multilineAnchor: 'SELECT',
-    multilineCount: 'JOIN',
-    multilineThreshold: 5,
-  },
-  {
-    name: 'Subquery inside IN clause',
-    category: 'database',
-    pattern: '\\bIN\\s*\\(\\s*SELECT\\b',
-    message: 'Subquery inside IN() — consider EXISTS or a JOIN instead',
-    hint: 'IN (SELECT ...) is often slower than EXISTS() or a JOIN, especially on large datasets. The optimizer may execute the subquery once per row.',
-    context: 'none',
-  },
-  {
-    name: 'SQL query in a loop (N+1)',
-    category: 'database',
-    pattern: '\\bselect\\b',
-    message: 'SQL query inside a loop — classic N+1 problem',
-    hint: 'Each iteration fires a separate DB round-trip. Use a JOIN, batch query (WHERE id IN (...)), or a dataloader instead.',
-    context: 'loop',
-  },
-  {
-    name: 'DELETE without WHERE',
-    category: 'database',
-    pattern: '\\bDELETE\\s+FROM\\s+\\w+\\s*[`;]',
-    message: 'DELETE without WHERE — this will wipe the entire table',
-    hint: 'A DELETE without a WHERE clause deletes every row. Always add a WHERE clause unless you explicitly want to truncate.',
-    context: 'none',
-  },
-  {
-    name: 'UPDATE without WHERE',
-    category: 'database',
-    pattern: '\\bUPDATE\\s+\\w+\\s+SET\\b(?!.*\\bWHERE\\b)',
-    message: 'UPDATE without WHERE — will update every row in the table',
-    hint: 'A WHERE clause is almost always required on UPDATE. Double-check this is intentional.',
-    context: 'none',
-  },
-
-  // ── SECURITY ──
-  {
-    name: 'Hardcoded API key or secret',
-    category: 'security',
-    pattern: '(password|secret|api_key|apikey|token|auth)\\s*[:=]\\s*[\x27\x22][^\x27\x22]{6,}',
-    message: 'Possible hardcoded secret detected',
-    hint: 'Move secrets to environment variables or a secrets manager (AWS SSM, HashiCorp Vault).',
-    context: 'none',
-  },
-  {
-    name: 'eval() usage',
-    category: 'security',
-    pattern: '\\beval\\s*\\(',
-    message: 'eval() is a security risk — avoid it',
-    hint: 'eval() executes arbitrary code and can be exploited via injection. Use JSON.parse() for data or restructure the logic.',
-    context: 'none',
-  },
-  {
-    name: 'Hardcoded IP address',
-    category: 'security',
-    pattern: '\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b',
-    message: 'Hardcoded IP address detected',
-    hint: 'Hardcoded IPs make deployments fragile and may expose internal infrastructure. Use environment variables or service discovery.',
-    context: 'none',
-  },
-  {
-    name: 'MD5 hashing (weak)',
-    category: 'security',
-    pattern: '\\bmd5\\s*\\(',
-    message: 'MD5 is cryptographically broken — use SHA-256 or bcrypt',
-    hint: 'MD5 collisions are trivial to generate. Use crypto.subtle.digest("SHA-256", ...) for hashing or bcrypt for passwords.',
-    context: 'none',
-  },
-  {
-    name: 'console.log with sensitive words',
-    category: 'security',
-    pattern: '(password|secret|api_key|apikey|token|auth)\\s*[:=]\\s*[\x27\x22][^\x27\x22]{6,}',
-    message: 'Logging potentially sensitive data',
-    hint: 'Logging secrets or credentials can expose them in log aggregators. Redact sensitive fields before logging.',
-    context: 'none',
-  },
-  {
-    name: 'SQL string concatenation (injection risk)',
-    category: 'security',
-    pattern: '(SELECT|INSERT|UPDATE|DELETE).*\\+\\s*(\\w+|[\x27\x22])',
-    message: 'SQL built with string concatenation — injection risk',
-    hint: 'Building SQL with + opens the door to SQL injection. Use parameterised queries or a query builder with bound parameters.',
-    context: 'none',
-  },
-
-  // ── PERFORMANCE ──
-  {
-    name: 'Synchronous fs call',
-    category: 'performance',
-    pattern: '\\bfs\\.(readFileSync|writeFileSync|existsSync|readdirSync|mkdirSync)\\b',
-    message: 'Synchronous fs call blocks the event loop',
-    hint: 'Use the async version: readFileSync → readFile, writeFileSync → writeFile. Sync calls block all other requests.',
-    context: 'none',
-  },
-  {
-    name: 'JSON.parse in a loop',
-    category: 'performance',
-    pattern: 'JSON\\.parse\\s*\\(',
-    message: 'JSON.parse() inside a loop — expensive repeated parsing',
-    hint: 'Parse once outside the loop and reuse the result.',
-    context: 'loop',
-  },
-  {
-    name: 'setTimeout with 0ms',
-    category: 'performance',
-    pattern: 'setTimeout\\s*\\(.*,\\s*0\\s*\\)',
-    message: 'setTimeout(fn, 0) is unreliable — use queueMicrotask()',
-    hint: '0ms delay is not guaranteed to be immediate and adds scheduler overhead. Use queueMicrotask() for microtask scheduling.',
-    context: 'none',
-  },
-  {
-    name: 'new object inside loop',
-    category: 'performance',
-    pattern: '(new\\s+\\w+\\(|\\[\\s*\\]|\\{\\s*\\})',
-    message: 'Object/array created inside a loop — GC pressure',
-    hint: 'Allocate outside the loop and reuse or clear per iteration to reduce garbage collection overhead.',
-    context: 'loop',
-  },
-  {
-    name: 'await inside loop (serial)',
-    category: 'performance',
-    pattern: '\\bawait\\b',
-    message: 'await inside a loop runs promises serially — use Promise.all()',
-    hint: 'Each await blocks the next iteration. Collect promises in an array and resolve with Promise.all([...]) for parallel execution.',
-    context: 'loop',
-  },
-  {
-    name: 'console.log left in code',
-    category: 'performance',
-    pattern: 'console\\.(log|warn|info)\\s*\\(',
-    message: 'console.log() left in code — remove before production',
-    hint: 'Use a proper logger (winston, pino) that can be disabled in production via log level.',
-    context: 'none',
-  },
-
-  // ── CODE QUALITY ──
-  {
-    name: 'TODO / FIXME comment',
-    category: 'code-quality',
-    pattern: '\\b(TODO|FIXME|HACK|XXX)\\b',
-    message: 'TODO/FIXME comment left in code',
-    hint: 'Track outstanding work in your issue tracker, not in code comments. TODOs in code often get forgotten.',
-    context: 'none',
-  },
-  {
-    name: 'Debugger statement',
-    category: 'code-quality',
-    pattern: '\\bdebugger\\b',
-    message: 'debugger statement left in code',
-    hint: 'Remove debugger statements before committing. They pause execution in any browser with DevTools open.',
-    context: 'none',
-  },
-  {
-    name: 'var declaration',
-    category: 'code-quality',
-    pattern: '\\bvar\\s+',
-    message: 'Avoid var — use const or let instead',
-    hint: 'var is function-scoped and hoisted, leading to subtle bugs. Use const by default and let when reassignment is needed.',
-    context: 'none',
-  },
-  {
-    name: 'Double equals (==)',
-    category: 'code-quality',
-    pattern: '(?<!=)={2}(?!=)',
-    message: 'Loose equality (==) — use strict equality (===) instead',
-    hint: '== performs type coercion which leads to unexpected results (e.g. 0 == "" is true). Always use === for comparisons.',
-    context: 'none',
-  },
-  {
-    name: 'Magic number',
-    category: 'code-quality',
-    pattern: '(?<![a-zA-Z0-9_.])(?!0\b|1\b|-1\b)\d{2,}(?![a-zA-Z0-9_])',
-    message: 'Magic number detected — extract to a named constant',
-    hint: 'Numbers with no explanation make code hard to understand. Extract to: const MAX_RETRIES = 5 and reference the constant.',
-    context: 'none',
-  },
-  {
-    name: 'Raw fetch() call',
-    category: 'code-quality',
-    pattern: '\\bfetch\\s*\\(',
-    message: 'Raw fetch() — use your internal HttpClient wrapper instead',
-    hint: 'Direct fetch() calls bypass auth token injection, retry logic, and error logging. Use the shared HttpClient from your core library.',
-    context: 'none',
-  },
-];
-
 let activeCategory = 'all';
 let activeSearch   = '';
 
@@ -520,6 +287,7 @@ function generate() {
       : generateAst(category, ruleName, message, hint, sevMap[sev]);
 
     state.generated = code;
+    document.getElementById('verifyBtn').disabled = false;
     renderCode(syntaxHighlight(code));
     updateInstructions();
     updateStepPills(3);
@@ -745,12 +513,28 @@ function updateStepPills(activeStep) {
 }
 
 // ── NOTIFICATION ──
-function showNotif(msg, isWarn) {
+function showNotif(msg, isWarn, withProgress = false, duration = 3000) {
   const n = document.getElementById('notif');
-  n.textContent = msg;
+  const textEl = document.getElementById('notif-text');
+  const progressEl = document.getElementById('notif-progress');
+  
+  textEl.textContent = msg;
   n.className = 'notif' + (isWarn ? ' warn' : '');
   n.classList.add('show');
-  setTimeout(() => n.classList.remove('show'), 3000);
+  
+  if (withProgress) {
+    progressEl.style.width = '0%';
+    progressEl.style.transition = `width ${duration}ms linear`;
+    setTimeout(() => {
+      progressEl.style.width = '100%';
+    }, 10); // small delay to trigger transition
+  } else {
+    progressEl.style.width = '0%';
+  }
+  
+  setTimeout(() => {
+    n.classList.remove('show');
+  }, duration);
 }
 
 // ── HELPERS ──
