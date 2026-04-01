@@ -178,18 +178,9 @@ function usePattern(idx) {
     if (p.multilineThreshold) document.getElementById('multilineThreshold').value  = p.multilineThreshold;
   }
 
-  // Pre-fill message and hint if empty
-  if (!document.getElementById('message').value.trim()) {
-    document.getElementById('message').value = p.message;
-  }
-  if (!document.getElementById('hint').value.trim()) {
-    document.getElementById('hint').value = p.hint;
-  }
-
-  // Auto-set category if not already set
-  if (!document.getElementById('category').value) {
-    document.getElementById('category').value = p.category;
-  }
+  document.getElementById('message').value = p.message;
+  document.getElementById('hint').value = p.hint;
+  document.getElementById('category').value = p.category;
 
   // Auto-set language dropdown if the pattern has a language
   const langEl = document.getElementById('ruleLanguage');

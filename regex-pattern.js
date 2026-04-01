@@ -389,7 +389,7 @@ const PATTERN_LIBRARY = [
     name: 'String concatenation in loop (Java)',
     category: 'performance',
     language: 'java',
-    pattern: 'String\\b.*\\+\\s*\\w+|^\\s*\\w+\\s*\\+=\\s*["\']',
+    pattern: '^\\s*\\w+\\s*\\+=|String\\b.*\\+\\s*\\w+',
     message: 'String concatenation with + inside a loop — use StringBuilder',
     hint: 'Each + creates a new String object. Use StringBuilder.append() inside loops and call toString() once at the end.',
     context: 'loop',
@@ -405,6 +405,15 @@ const PATTERN_LIBRARY = [
   },
 
   // ── Java code quality ──
+  {
+    name: 'Empty catch block (Java)',
+    category: 'code-quality',
+    language: 'java',
+    pattern: '^\\s*catch\\s*\\(',
+    message: 'Empty catch block — exception is silently swallowed',
+    hint: 'At minimum log the exception: catch (Exception e) { logger.error("Error", e); }. Silent catches hide bugs.',
+    context: 'none',
+  },
   {
     name: 'Catch generic Exception (Java)',
     category: 'code-quality',
