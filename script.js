@@ -525,11 +525,11 @@ function openConfirmModal(onYes, onNo) {
     qEl.style.display = 'none';
   }
 
-  document.getElementById('confirmModal').style.display = 'block';
+  Popup.open('confirmModal');
 }
 
 function closeConfirmModal() {
-  document.getElementById('confirmModal').style.display = 'none';
+  Popup.close('confirmModal');
 }
 
 function confirmCopy() {
@@ -652,21 +652,17 @@ document.addEventListener('DOMContentLoaded', () => {
     this.classList.toggle('invalid', !validateRuleName(name) && name !== '');
   });
 
-  // Modal
-  document.getElementById('infoBtn').addEventListener('click', () => {
-    document.getElementById('infoModal').style.display = 'block';
+  // ── Register all modals with the base Popup system ──
+  Popup.register('infoModal');
+  Popup.register('confirmModal', {
+    onClose: () => {
+      // Reset back to step 1 for next open
+      document.getElementById('confirmStep1').style.display = 'block';
+      document.getElementById('confirmStep2').style.display = 'none';
+    },
   });
-  document.querySelector('.close').addEventListener('click', () => {
-    document.getElementById('infoModal').style.display = 'none';
-  });
-  window.addEventListener('click', (event) => {
-    if (event.target === document.getElementById('infoModal')) {
-      document.getElementById('infoModal').style.display = 'none';
-    }
-    if (event.target === document.getElementById('confirmModal')) {
-      closeConfirmModal();
-    }
-  });
+
+  document.getElementById('infoBtn').addEventListener('click', () => Popup.open('infoModal'));
 
   // Build AST node picker and pattern library
   buildNodePicker();
