@@ -482,9 +482,63 @@ function renderCode(html) {
   document.getElementById('codeOutput').innerHTML = html;
 }
 
-// ── COPY ──
+// ── COPY — goes through confirmation modal ──
 function copyCode() {
   if (!state.generated) return;
+  openConfirmModal();
+}
+
+// ── CONFIRMATION MODAL ──────────────────────────────
+// Reusable component. To use elsewhere:
+//   openConfirmModal(onYes, onNo)  — both optional callbacks
+// Default behaviour: yes = copy code, no = show verify step
+
+let _confirmOnYes  = null;
+let _confirmOnNo   = null;
+
+function openConfirmModal(onYes, onNo) {
+  _confirmOnYes = onYes || null;
+  _confirmOnNo  = onNo  || null;
+
+  // Reset to step 1
+  document.getElementById('confirmStep1').style.display = 'block';
+  document.getElementById('confirmStep2').style.display = 'none';
+
+  // Quality check — warn if hint is missing or very short
+  const hint    = document.getElementById('hint').value.trim();
+  const message = document.getElementById('message').value.trim();
+  const qEl     = document.getElementById('confirmQualityCheck');
+  const issues  = [];
+
+  if (!hint || hint.length < 20) {
+    issues.push('⚠️ Your <b>hint</b> is empty or very short — developers won\'t know how to fix the issue.');
+  }
+  if (!message || message.length < 10) {
+    issues.push('⚠️ Your <b>message</b> is too short — it\'s what appears in the squiggly tooltip.');
+  }
+
+  if (issues.length > 0) {
+    qEl.innerHTML = issues.map(i => `<div class="confirm-quality-issue">${i}</div>`).join('');
+    qEl.style.display = 'block';
+  } else {
+    qEl.innerHTML = '';
+    qEl.style.display = 'none';
+  }
+
+  document.getElementById('confirmModal').style.display = 'block';
+}
+
+function closeConfirmModal() {
+  document.getElementById('confirmModal').style.display = 'none';
+}
+
+function confirmCopy() {
+  closeConfirmModal();
+  if (_confirmOnYes) {
+    _confirmOnYes();
+    return;
+  }
+  // Default: copy the generated code
   navigator.clipboard.writeText(state.generated).then(() => {
     const btn = document.getElementById('copyBtn');
     btn.textContent = '✓ Copied!';
@@ -493,6 +547,23 @@ function copyCode() {
     setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
   });
 }
+
+function showConfirmStep2() {
+  if (_confirmOnNo) {
+    closeConfirmModal();
+    _confirmOnNo();
+    return;
+  }
+  // Default: show "verify now?" step
+  document.getElementById('confirmStep1').style.display = 'none';
+  document.getElementById('confirmStep2').style.display = 'block';
+}
+
+function confirmVerify() {
+  closeConfirmModal();
+  openVerification();
+}
+// ────────────────────────────────────────────────────
 
 // ── TAB SWITCH ──
 function switchTab(tab, btn) {
@@ -591,6 +662,9 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('click', (event) => {
     if (event.target === document.getElementById('infoModal')) {
       document.getElementById('infoModal').style.display = 'none';
+    }
+    if (event.target === document.getElementById('confirmModal')) {
+      closeConfirmModal();
     }
   });
 

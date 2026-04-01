@@ -76,7 +76,36 @@ function generateRegexVerificationPrompt(cat, name, msg, hint, sev) {
     hint: 'vscode.DiagnosticSeverity.Hint',
   };
 
-  const contextIsMultiline = context.startsWith('multiline');
+  // Language mismatch detection — give Claude a clear signal
+  const contextIsMultiline  = context.startsWith('multiline');
+  const langMismatchWarning = (() => {
+    if (langValue === 'all') return '';
+    const jsPatternSignals   = /console\.|JSON\.|typeof |===|!==|=>|async |await |\.then\(|require\(|import /;
+    const pyPatternSignals   = /def |print\(|except|import |:\s*$|#/;
+    const javaPatternSignals = /System\.|catch\s*\(|public |private |@Override/;
+    const cppPatternSignals  = /std::|cout|printf|#define|#include|delete |new /;
+
+    const checks = {
+      'js-ts':  { test: jsPatternSignals,   label: 'JS/TS' },
+      'python': { test: pyPatternSignals,   label: 'Python' },
+      'java':   { test: javaPatternSignals, label: 'Java' },
+      'cpp':    { test: cppPatternSignals,  label: 'C/C++' },
+    };
+
+    const selected = checks[langValue];
+    if (!selected) return '';
+
+    // Check if pattern looks like it belongs to a different language
+    for (const [key, check] of Object.entries(checks)) {
+      if (key !== langValue && check.test.test(pattern)) {
+        return `\n⚠️  POSSIBLE LANGUAGE MISMATCH DETECTED\n` +
+               `The pattern contains signals that look like ${check.label} code,\n` +
+               `but the target language is set to "${selected.label}".\n` +
+               `Please verify this is intentional.\n`;
+      }
+    }
+    return '';
+  })();
 
   return `You are verifying a VS Code linting rule for a tool called ScaleArch.
 ScaleArch is a VS Code extension that runs static analysis on code files.
@@ -86,17 +115,18 @@ Rules can be scoped to specific languages using the optional "languages" field.
 I built this rule using the ScaleArch Rule Builder UI. Please verify:
 1. The regex pattern is correct and does what I intend
 2. The test function logic matches the context mode I selected
-3. The languages field is correct for the target language
-4. Point out any false positives or false negatives
-5. If anything is wrong, give the corrected version in the EXACT same format
+3. The languages field matches the pattern (wrong language = rule never fires OR fires on wrong files)
+4. The message and hint are clear enough for a developer to understand and act on
+5. Point out any false positives or false negatives
+6. If anything is wrong, give the corrected version in the EXACT same format
 
 ═══════════════════════════════════════
 RULE DETAILS (filled in by user)
 ═══════════════════════════════════════
 Category  : ${cat || '(not set)'}
 Rule ID   : ${cat}/${name || '(not set)'}
-Message   : ${msg || '(not set)'}
-Hint      : ${hint || '(same as message)'}
+Message   : ${msg || '⚠️ NOT PROVIDED — please suggest a good one'}
+Hint      : ${hint || '⚠️ NOT PROVIDED — please suggest a good one that explains WHY this is a problem and HOW to fix it'}
 Severity  : ${sevMap[sev]}
 Pattern   : /${pattern || '(not set)'}/i
 Context   : ${contextDescriptions[context] || context}
@@ -104,6 +134,7 @@ ${contextIsMultiline ? `Anchor    : ${anchor}
 Count kw  : ${countKw}
 Threshold : ${threshold}` : ''}
 Language  : ${langLabels[langValue] || 'All languages'}
+${langMismatchWarning}
 
 ═══════════════════════════════════════
 GENERATED CODE TO VERIFY
@@ -221,19 +252,27 @@ EXAMPLES OF CORRECT RULES (for reference)
 WHAT I NEED FROM YOU
 ═══════════════════════════════════════
 1. Is the regex pattern /${pattern}/i correct for what the rule intends?
-   - Give 3 code examples that SHOULD trigger it (in the target language: ${langLabels[langValue] || 'all languages'})
+   - Give 3 code examples that SHOULD trigger it (written in: ${langLabels[langValue] || 'any language'})
    - Give 2 code examples that should NOT trigger it (false positives check)
 
 2. Is the test function logic correct for context mode "${context}"?
 
-3. Is the languages field correct for "${langLabels[langValue] || 'All languages'}"?
-   - Current value in generated code: ${langArrays[langValue] ? `languages: ${langArrays[langValue]}` : '(no languages field — runs on all languages)'}
-   - Should it be more specific or broader?
+3. Is the languages field correct?
+   - Selected language: ${langLabels[langValue] || 'All languages'}
+   - Generated field: ${langArrays[langValue] ? `languages: ${langArrays[langValue]}` : '(no languages field — fires on all languages)'}
+   - Does the pattern actually make sense for this language? If not, what should the language be?
 
-4. If anything is wrong, provide the corrected rule in the EXACT format shown above.
+4. Are the message and hint good quality?
+   - Message: "${msg || '(not provided)'}"
+   - Hint: "${hint || '(not provided)'}"
+   - A good message is short, specific, and actionable (e.g. "Raw SQL detected — use QueryBuilder instead")
+   - A good hint explains WHY it is a problem and exactly HOW to fix it
+   - If either is missing or weak, suggest a better version
+
+5. If anything is wrong, provide the corrected rule in the EXACT format shown above.
    Do NOT change the structure — only fix what is incorrect.
 
-5. One-line summary: VALID or NEEDS FIX, and why.`;
+6. One-line summary: VALID or NEEDS FIX, and why.`;
 }
 
 function generateAstVerificationPrompt(cat, name, msg, hint, sev) {
