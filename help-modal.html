@@ -1,0 +1,285 @@
+<!-- ══ HELP MODAL ══ -->
+<div id="helpModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle">
+  <div class="modal-content help-modal-content">
+
+    <div class="help-modal-header">
+      <div class="help-modal-header-text">
+        <span class="help-modal-eyebrow">Guide</span>
+        <h2 id="helpModalTitle" class="help-modal-title">How ScaleArch Rule Builder works</h2>
+      </div>
+      <button class="help-modal-close" data-popup-close aria-label="Close">✕</button>
+    </div>
+
+    <div class="help-modal-body">
+
+      <!-- ══ SECTION 1 — How the builder works ══ -->
+      <div class="help-section" id="helpSection0">
+        <button class="help-section-toggle" onclick="toggleHelpSection(0)" aria-expanded="true">
+          <span class="help-section-num">01</span>
+          <span class="help-section-label">How to use this builder</span>
+          <span class="help-section-chevron">▾</span>
+        </button>
+        <div class="help-section-body" id="helpSectionBody0">
+          <div class="help-steps">
+
+            <div class="help-step">
+              <div class="help-step-num">1</div>
+              <div class="help-step-content">
+                <div class="help-step-title">Fill in the rule identity</div>
+                <div class="help-step-desc">Give your rule a <b>category</b>, a kebab-case <b>name</b> (e.g. <code>no-raw-sql</code>), a short <b>message</b> (shown in the squiggly tooltip in VS Code), and a detailed <b>hint</b> explaining why the code is bad and how to fix it. The hint is what developers see on hover — make it actionable.</div>
+              </div>
+            </div>
+
+            <div class="help-step">
+              <div class="help-step-num">2</div>
+              <div class="help-step-content">
+                <div class="help-step-title">Choose Regex or AST</div>
+                <div class="help-step-desc"><b>Regex</b> — detects text patterns on a single line. Fast. Good for 80% of rules.<br/><b>AST</b> — understands code structure. Use only when you need to know about function length, class methods, nesting depth, or parameter counts. Not sure? See sections 02 and 03 below.</div>
+              </div>
+            </div>
+
+            <div class="help-step">
+              <div class="help-step-num">3</div>
+              <div class="help-step-content">
+                <div class="help-step-title">Pick from the library or write your own</div>
+                <div class="help-step-desc">The <b>pattern library</b> has 54 ready-made patterns. Search by name or filter by category. Click <b>Use →</b> to pre-fill the entire form. If nothing fits, write your own pattern in the Regex pattern field and use <b>Test →</b> to verify it before generating.</div>
+              </div>
+            </div>
+
+            <div class="help-step">
+              <div class="help-step-num">4</div>
+              <div class="help-step-content">
+                <div class="help-step-title">Pick a target language</div>
+                <div class="help-step-desc">Use <b>All languages</b> for rules that apply everywhere (e.g. SQL patterns, hardcoded secrets). Use a specific language for patterns that only make sense in that language — e.g. <code>System.out.println</code> is Java-only, <code>bare except:</code> is Python-only.</div>
+              </div>
+            </div>
+
+            <div class="help-step">
+              <div class="help-step-num">5</div>
+              <div class="help-step-content">
+                <div class="help-step-title">Generate, verify, then paste</div>
+                <div class="help-step-desc">Hit <b>Generate rule code</b>. Click <b>Verify with Claude →</b> to get a second opinion before using it. When you're confident, Copy and paste the code into <code>src/rules/customRules.ts</code> in your ScaleArch extension. Press F5 in VS Code to test it live.</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ SECTION 2 — Regex ══ -->
+      <div class="help-section" id="helpSection1">
+        <button class="help-section-toggle" onclick="toggleHelpSection(1)" aria-expanded="false">
+          <span class="help-section-num">02</span>
+          <span class="help-section-label">Regex rules — line-by-line pattern matching</span>
+          <span class="help-section-chevron">▾</span>
+        </button>
+        <div class="help-section-body" id="helpSectionBody1" style="display:none;">
+
+          <div class="help-two-col">
+            <div class="help-card help-card-green">
+              <div class="help-card-title">✓ Use Regex when…</div>
+              <ul class="help-card-list">
+                <li>The problem is visible on one line of code</li>
+                <li>You're looking for a specific function call (<code>eval()</code>, <code>console.log()</code>)</li>
+                <li>You're detecting SQL patterns in strings</li>
+                <li>You're banning a specific import or API</li>
+                <li>You're detecting hardcoded values (secrets, IPs)</li>
+              </ul>
+            </div>
+            <div class="help-card help-card-red">
+              <div class="help-card-title">✗ Don't use Regex when…</div>
+              <ul class="help-card-list">
+                <li>You need to know how long a function is</li>
+                <li>You need to count methods in a class</li>
+                <li>You need to check nesting depth</li>
+                <li>The pattern spans multiple lines</li>
+                <li>You need to understand code structure</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="help-example-block">
+            <div class="help-example-label">Built-in example — <code>py/bare-except</code></div>
+            <div class="help-example-desc">Catches Python's bare <code>except:</code> which silently swallows every exception including <code>KeyboardInterrupt</code>. A single line is enough to detect it.</div>
+            <pre class="help-code">{
+  id: 'py/bare-except',
+  category: 'code-quality',
+  languages: ['python'],
+  severity: vscode.DiagnosticSeverity.Warning,
+  message: 'Bare except: catches everything including KeyboardInterrupt',
+  hint: 'Use except ValueError: or except (TypeError, ValueError):',
+  test: (line) => /^\s*except\s*:/.test(line),
+}</pre>
+          </div>
+
+          <div class="help-example-block">
+            <div class="help-example-label">Your own example — ban a deprecated internal API</div>
+            <div class="help-example-desc">Your company deprecated <code>PaymentServiceV1</code>. Anyone who writes it gets an instant red squiggly with a link to the migration guide.</div>
+            <pre class="help-code">{
+  id: 'company/no-payment-v1',
+  category: 'security',
+  languages: ['typescript', 'javascript'],
+  severity: vscode.DiagnosticSeverity.Error,
+  message: 'PaymentServiceV1 is deprecated — use PaymentServiceV2',
+  hint: 'V1 does not meet PCI-DSS v4. See: confluence.company.com/payment-migration',
+  test: (line) => /PaymentServiceV1|paymentV1/i.test(line),
+}</pre>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ══ SECTION 3 — AST ══ -->
+      <div class="help-section" id="helpSection2">
+        <button class="help-section-toggle" onclick="toggleHelpSection(2)" aria-expanded="false">
+          <span class="help-section-num">03</span>
+          <span class="help-section-label">AST rules — structure-aware analysis</span>
+          <span class="help-section-chevron">▾</span>
+        </button>
+        <div class="help-section-body" id="helpSectionBody2" style="display:none;">
+
+          <div class="help-explainer">
+            <p>AST stands for <b>Abstract Syntax Tree</b>. When ScaleArch parses your file, it builds a tree of every function, class, loop, and expression. An AST rule receives <b>one node at a time</b> from that tree and decides whether to flag it.</p>
+            <p>Think of it like this: Regex reads your code as text. AST reads it as code.</p>
+          </div>
+
+          <div class="help-ast-tree">
+            <div class="help-ast-label">What a simple function looks like as an AST</div>
+            <pre class="help-code help-code-dim">function greet(name) {   →   FunctionDeclaration
+  return "Hello " + name;       id.name = "greet"
+}                                params = [name]
+                                 body.body = [ReturnStatement]</pre>
+          </div>
+
+          <div class="help-two-col">
+            <div class="help-card help-card-green">
+              <div class="help-card-title">✓ Use AST when…</div>
+              <ul class="help-card-list">
+                <li>You need to know function length in lines</li>
+                <li>You need to count methods in a class</li>
+                <li>You need to check parameter count</li>
+                <li>You need to detect empty catch blocks</li>
+                <li>You need to check nesting depth</li>
+              </ul>
+            </div>
+            <div class="help-card help-card-red">
+              <div class="help-card-title">✗ Don't use AST when…</div>
+              <ul class="help-card-list">
+                <li>A regex on the line would work fine</li>
+                <li>You're looking for a string pattern</li>
+                <li>You want to detect a function call by name</li>
+                <li>You're working with Python, Java, or C++</li>
+                <li>You want something fast and simple</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="help-example-block">
+            <div class="help-example-label">Built-in example — <code>solid/srp</code></div>
+            <div class="help-example-desc">Flags any class with more than 10 methods — a sign it's doing too much (Single Responsibility Principle). Regex cannot count methods; AST can.</div>
+            <pre class="help-code">export function checkSRP(node: any): RuleResult | null {
+  if (node.type !== 'ClassDeclaration') return null;
+
+  const methods = node.body.body.filter(
+    m => m.type === 'MethodDefinition' && m.kind !== 'constructor'
+  );
+  if (methods.length <= 10) return null;
+
+  return {
+    range: makeRange(node),
+    code: 'solid/srp',
+    message: `Class has ${methods.length} methods — consider splitting`,
+    hint: 'A class should have one reason to change.',
+    severity: vscode.DiagnosticSeverity.Warning,
+  };
+}</pre>
+          </div>
+
+          <div class="help-example-block">
+            <div class="help-example-label">Your own example — every async function must have try/catch</div>
+            <div class="help-example-desc">Company policy: unhandled promise rejections crash the server. This rule flags any async function without a try/catch block.</div>
+            <pre class="help-code">function checkAsyncMustHaveTryCatch(node: any): RuleResult | null {
+  const fnTypes = ['FunctionDeclaration','FunctionExpression','ArrowFunctionExpression'];
+  if (!fnTypes.includes(node.type)) return null;
+  if (!node.async) return null;
+
+  const hasTryCatch = (node.body?.body ?? []).some(
+    s => s.type === 'TryStatement'
+  );
+  if (hasTryCatch) return null;
+
+  return {
+    range: makeRange(node),
+    code: 'company/async-no-try-catch',
+    message: 'Async function has no try/catch — unhandled rejections crash the server',
+    hint: 'Wrap the body in try/catch or use your withErrorHandling() wrapper.',
+    severity: vscode.DiagnosticSeverity.Error,
+  };
+}</pre>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ══ SECTION 4 — Links ══ -->
+      <div class="help-section" id="helpSection3">
+        <button class="help-section-toggle" onclick="toggleHelpSection(3)" aria-expanded="false">
+          <span class="help-section-num">04</span>
+          <span class="help-section-label">Useful resources</span>
+          <span class="help-section-chevron">▾</span>
+        </button>
+        <div class="help-section-body" id="helpSectionBody3" style="display:none;">
+          <div class="help-links">
+
+            <a class="help-link" href="https://regex101.com" target="_blank" rel="noopener">
+              <div class="help-link-icon">🔬</div>
+              <div class="help-link-body">
+                <div class="help-link-title">regex101.com</div>
+                <div class="help-link-desc">Test and debug your regex pattern interactively. Paste your pattern, paste test code, and see exactly which parts match — with a full explanation of what each token does.</div>
+              </div>
+              <div class="help-link-arrow">↗</div>
+            </a>
+
+            <a class="help-link" href="https://astexplorer.net" target="_blank" rel="noopener">
+              <div class="help-link-icon">🌳</div>
+              <div class="help-link-body">
+                <div class="help-link-title">astexplorer.net</div>
+                <div class="help-link-desc">Paste any TypeScript or JavaScript and see its full AST. Select <b>@typescript-eslint/parser</b> — this is the exact parser ScaleArch uses. Click any node to see its type and properties.</div>
+              </div>
+              <div class="help-link-arrow">↗</div>
+            </a>
+
+            <a class="help-link" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions" target="_blank" rel="noopener">
+              <div class="help-link-icon">📖</div>
+              <div class="help-link-body">
+                <div class="help-link-title">MDN — Regular Expressions Guide</div>
+                <div class="help-link-desc">Comprehensive reference for regex syntax. Covers character classes, anchors, quantifiers, lookaheads, and more — with live examples you can edit.</div>
+              </div>
+              <div class="help-link-arrow">↗</div>
+            </a>
+
+            <a class="help-link" href="https://typescript-eslint.io/developers/custom-rules" target="_blank" rel="noopener">
+              <div class="help-link-icon">⚙️</div>
+              <div class="help-link-body">
+                <div class="help-link-title">typescript-eslint — Custom Rules</div>
+                <div class="help-link-desc">Deep dive into AST rule writing. Shows all available node types, how to use selectors, and how to test custom rules. The AST concepts apply directly to ScaleArch's AST engine.</div>
+              </div>
+              <div class="help-link-arrow">↗</div>
+            </a>
+
+            <a class="help-link" href="https://github.com/Udayverma0906/ScaleArch" target="_blank" rel="noopener">
+              <div class="help-link-icon">⭐</div>
+              <div class="help-link-body">
+                <div class="help-link-title">ScaleArch on GitHub</div>
+                <div class="help-link-desc">Source code for the extension. The README has a full rules reference and step-by-step guide for adding custom rules to <code>customRules.ts</code>.</div>
+              </div>
+              <div class="help-link-arrow">↗</div>
+            </a>
+
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /help-modal-body -->
+  </div><!-- /modal-content -->
+</div><!-- /helpModal -->

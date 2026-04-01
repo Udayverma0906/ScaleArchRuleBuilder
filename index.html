@@ -21,6 +21,7 @@
   </div>
   <div class="header-controls">
     <button id="themeToggle" class="theme-toggle" title="Toggle theme"></button>
+    <button id="helpBtn" class="help-btn">✦ Confused?</button>
     <button id="infoBtn" class="info-btn">Details</button>
   </div>
 </header>
@@ -339,52 +340,12 @@
 
 <div id="infoModal" class="modal">
   <div class="modal-content">
-    <span class="close" data-popup-close>&times;</span>
+    <span class="close">&times;</span>
     <h2>ScaleArch Rule Builder</h2>
-    <p><strong>Version: </strong>v2.6.0</p>
+    <p><strong>Version: </strong>v2.7.0</p>
     <p><strong>Created by: </strong> Uday Verma</p>
     <p><a href="https://github.com/Udayverma0906/ScaleArch" target="_blank">GitHub Repository for Extension</a></p>
     <p><a href="https://www.linkedin.com/in/uday-verma0906/" target="_blank">LinkedIn</a></p>
-  </div>
-</div>
-
-<!-- ══ CONFIRMATION MODAL (reusable component) ══ -->
-<div id="confirmModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
-  <div class="modal-content confirm-modal-content">
-
-    <!-- Step 1: Have you verified? -->
-    <div id="confirmStep1">
-      <div class="confirm-icon">📋</div>
-      <h2 id="confirmTitle" class="confirm-title">Copy rule code?</h2>
-      <p class="confirm-body">Have you verified this rule is correct before pasting it into your extension?</p>
-      <div class="confirm-quality-check" id="confirmQualityCheck">
-        <!-- filled by JS if hint/message issues found -->
-      </div>
-      <div class="confirm-actions">
-        <button class="confirm-btn confirm-btn-primary" onclick="confirmCopy()">
-          ✓ Yes, copy it
-        </button>
-        <button class="confirm-btn confirm-btn-secondary" onclick="showConfirmStep2()">
-          Not yet
-        </button>
-      </div>
-    </div>
-
-    <!-- Step 2: Verify now? -->
-    <div id="confirmStep2" style="display:none;">
-      <div class="confirm-icon">🤖</div>
-      <h2 class="confirm-title">Verify with Claude?</h2>
-      <p class="confirm-body">Claude can check your pattern for mistakes, false positives, and language mismatches — then give you a corrected version if needed.</p>
-      <div class="confirm-actions">
-        <button class="confirm-btn confirm-btn-accent" onclick="confirmVerify()">
-          Open Claude →
-        </button>
-        <button class="confirm-btn confirm-btn-ghost" onclick="closeConfirmModal()">
-          Skip for now
-        </button>
-      </div>
-    </div>
-
   </div>
 </div>
 

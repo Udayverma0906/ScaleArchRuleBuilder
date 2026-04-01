@@ -622,6 +622,17 @@ function showNotif(msg, isWarn, withProgress = false, duration = 3000) {
   }, duration);
 }
 
+// ── HELP MODAL ACCORDION ──
+function toggleHelpSection(index) {
+  const body    = document.getElementById('helpSectionBody' + index);
+  const section = document.getElementById('helpSection' + index);
+  const toggle  = section?.querySelector('.help-section-toggle');
+  const isOpen  = body.style.display !== 'none';
+
+  body.style.display = isOpen ? 'none' : 'block';
+  toggle?.setAttribute('aria-expanded', String(!isOpen));
+}
+
 // ── HELPERS ──
 function toCamelCase(str) {
   return str
@@ -663,6 +674,26 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('infoBtn').addEventListener('click', () => Popup.open('infoModal'));
+
+  // ── Load help modal from external file, then register ──
+  fetch('help-modal.html')
+    .then(r => r.text())
+    .then(html => {
+      document.body.insertAdjacentHTML('beforeend', html);
+      Popup.register('helpModal', {
+        onOpen: () => {
+          [0, 1, 2, 3].forEach(i => {
+            const body   = document.getElementById('helpSectionBody' + i);
+            const toggle = document.querySelector('#helpSection' + i + ' .help-section-toggle');
+            if (!body) return;
+            body.style.display = (i === 0) ? 'block' : 'none';
+            toggle?.setAttribute('aria-expanded', String(i === 0));
+          });
+        },
+      });
+      document.getElementById('helpBtn').addEventListener('click', () => Popup.open('helpModal'));
+    })
+    .catch(() => console.warn('[ScaleArch] help-modal.html not found'));
 
   // Build AST node picker and pattern library
   buildNodePicker();
