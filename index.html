@@ -54,14 +54,14 @@
         <div class="field-row">
           <div class="field">
             <label><span class="required">*</span> Category</label>
-            <select id="category">
-              <option value="">— select —</option>
-              <option value="database">🗄️  Database</option>
-              <option value="performance">⚡ Performance</option>
-              <option value="security">🔒 Security</option>
-              <option value="solid">🏗️  SOLID</option>
-              <option value="code-quality">🧹 Code quality</option>
-            </select>
+            <input type="hidden" id="category" value=""/>
+            <div class="custom-pill-grid" id="categoryPills">
+              <button type="button" class="cpill" data-target="category" data-value="database"     onclick="selectPill(this)">🗄️ Database</button>
+              <button type="button" class="cpill" data-target="category" data-value="performance"  onclick="selectPill(this)">⚡ Performance</button>
+              <button type="button" class="cpill" data-target="category" data-value="security"     onclick="selectPill(this)">🔒 Security</button>
+              <button type="button" class="cpill" data-target="category" data-value="solid"        onclick="selectPill(this)">🏗️ SOLID</button>
+              <button type="button" class="cpill" data-target="category" data-value="code-quality" onclick="selectPill(this)">🧹 Code quality</button>
+            </div>
           </div>
           <div class="field">
             <label><span class="required">*</span> Rule name</label>
@@ -115,14 +115,15 @@
         <div id="regex-section" style="display:flex;flex-direction:column;gap:16px;">
 
           <div class="field">
-  <label>Target language(s) <span style="color:var(--text-dim);font-size:9px;margin-left:4px;">leave blank to run on all languages</span></label>
-  <select id="ruleLanguage">
-    <option value="all">All languages (JS, TS, Python, Java, C++)</option>
-    <option value="js-ts">JS / TS only</option>
-    <option value="python">Python only</option>
-    <option value="java">Java only</option>
-    <option value="cpp">C / C++ only</option>
-  </select>
+  <label>Target language(s) <span style="color:var(--text-dim);font-size:9px;margin-left:4px;">Select All to run on all languages</span></label>
+  <input type="hidden" id="ruleLanguage" value="all"/>
+  <div class="custom-pill-grid" id="languagePills">
+    <button type="button" class="cpill cpill-selected" data-target="ruleLanguage" data-value="all"    onclick="selectPill(this)">All</button>
+    <button type="button" class="cpill" data-target="ruleLanguage" data-value="js-ts"   onclick="selectPill(this)">JS / TS</button>
+    <button type="button" class="cpill" data-target="ruleLanguage" data-value="python"  onclick="selectPill(this)">Python</button>
+    <button type="button" class="cpill" data-target="ruleLanguage" data-value="java"    onclick="selectPill(this)">Java</button>
+    <button type="button" class="cpill" data-target="ruleLanguage" data-value="cpp"     onclick="selectPill(this)">C / C++</button>
+  </div>
 </div>
 
           <!-- Pattern Library -->
@@ -159,14 +160,21 @@
           </div>
           <div class="field">
             <label>Context mode <span style="color:var(--text-dim);font-size:9px;margin-left:4px;">how to scan — single line or across multiple lines</span></label>
-            <select id="contextType">
-              <option value="none">Single line — pattern must match on one line</option>
-              <option value="loop">Single line — only near a loop (for / while / forEach)</option>
-              <option value="async">Single line — only near an async function</option>
-              <option value="class">Single line — only near a class</option>
-              <option value="multiline-keyword">Multi-line — trigger on a keyword, count pattern across next 25 lines</option>
-              <option value="multiline-count">Multi-line — trigger on first match, count occurrences in next 25 lines</option>
-            </select>
+            <input type="hidden" id="contextType" value="none"/>
+            <div class="custom-dropdown" id="contextDropdown">
+              <button type="button" class="cdd-trigger" onclick="toggleDropdown('contextDropdown')">
+                <span class="cdd-value" id="contextDropdownLabel">Single line — pattern must match on one line</span>
+                <span class="cdd-arrow">▾</span>
+              </button>
+              <div class="cdd-menu" id="contextDropdownMenu" style="display:none;">
+                <button type="button" class="cdd-option cdd-selected" data-value="none"               onclick="selectDropdown('contextDropdown','contextType',this,'Single line — pattern must match on one line')">Single line — exact match</button>
+                <button type="button" class="cdd-option" data-value="loop"                            onclick="selectDropdown('contextDropdown','contextType',this,'Single line — only near a loop')">Single line — near a loop</button>
+                <button type="button" class="cdd-option" data-value="async"                           onclick="selectDropdown('contextDropdown','contextType',this,'Single line — near an async function')">Single line — near async</button>
+                <button type="button" class="cdd-option" data-value="class"                           onclick="selectDropdown('contextDropdown','contextType',this,'Single line — near a class')">Single line — near a class</button>
+                <button type="button" class="cdd-option" data-value="multiline-keyword"               onclick="selectDropdown('contextDropdown','contextType',this,'Multi-line — count keyword across 25 lines')">Multi-line — count keyword</button>
+                <button type="button" class="cdd-option" data-value="multiline-count"                 onclick="selectDropdown('contextDropdown','contextType',this,'Multi-line — count pattern occurrences')">Multi-line — count occurrences</button>
+              </div>
+            </div>
           </div>
           <div id="multilineFields" style="display:none;flex-direction:column;gap:10px;background:rgba(108,99,255,0.05);border:1px solid rgba(108,99,255,0.18);border-radius:8px;padding:12px;">
             <div class="field">
@@ -217,16 +225,23 @@
 
           <div class="field">
             <label><span class="required">*</span> What to check on the node</label>
-            <select id="astCheck">
-              <option value="empty-body">Body is empty (no statements)</option>
-              <option value="param-count">Too many parameters (threshold)</option>
-              <option value="method-count">Too many methods in class (threshold)</option>
-              <option value="line-count">Function too long (threshold)</option>
-              <option value="callee-name">Specific function called — CallExpression (e.g. fetch(), eval())</option>
-              <option value="declared-name">Specific function declared — FunctionDeclaration name</option>
-              <option value="method-name">Specific method declared — MethodDefinition name in class</option>
-              <option value="custom-prop">Custom property check</option>
-            </select>
+            <input type="hidden" id="astCheck" value="empty-body"/>
+            <div class="custom-dropdown" id="astCheckDropdown">
+              <button type="button" class="cdd-trigger" onclick="toggleDropdown('astCheckDropdown')">
+                <span class="cdd-value" id="astCheckDropdownLabel">Body is empty (no statements)</span>
+                <span class="cdd-arrow">▾</span>
+              </button>
+              <div class="cdd-menu" id="astCheckDropdownMenu" style="display:none;">
+                <button type="button" class="cdd-option cdd-selected" data-value="empty-body"    onclick="selectDropdown('astCheckDropdown','astCheck',this,'Body is empty (no statements)')">Body is empty (no statements)</button>
+                <button type="button" class="cdd-option" data-value="param-count"                onclick="selectDropdown('astCheckDropdown','astCheck',this,'Too many parameters (threshold)')">Too many parameters (threshold)</button>
+                <button type="button" class="cdd-option" data-value="method-count"               onclick="selectDropdown('astCheckDropdown','astCheck',this,'Too many methods in class (threshold)')">Too many methods in class (threshold)</button>
+                <button type="button" class="cdd-option" data-value="line-count"                 onclick="selectDropdown('astCheckDropdown','astCheck',this,'Function too long (threshold)')">Function too long (threshold)</button>
+                <button type="button" class="cdd-option" data-value="callee-name"                onclick="selectDropdown('astCheckDropdown','astCheck',this,'Specific function called (e.g. fetch, eval)')">Specific function called</button>
+                <button type="button" class="cdd-option" data-value="declared-name"              onclick="selectDropdown('astCheckDropdown','astCheck',this,'Specific function declared — by name')">Specific function declared</button>
+                <button type="button" class="cdd-option" data-value="method-name"                onclick="selectDropdown('astCheckDropdown','astCheck',this,'Specific method in class — by name')">Specific method in class</button>
+                <button type="button" class="cdd-option" data-value="custom-prop"                onclick="selectDropdown('astCheckDropdown','astCheck',this,'Custom property check')">Custom property check</button>
+              </div>
+            </div>
           </div>
           <div class="field" id="thresholdField" style="display:none;">
             <label>Threshold number</label>
@@ -342,7 +357,7 @@
   <div class="modal-content">
     <span class="close" data-popup-close>&times;</span>
     <h2>ScaleArch Rule Builder</h2>
-    <p><strong>Version: </strong>v3.0.0</p>
+    <p><strong>Version: </strong>v2.2.0</p>
     <p><strong>Created by: </strong> Uday Verma</p>
     <p><a href="https://github.com/Udayverma0906/ScaleArch" target="_blank">GitHub Repository for Extension</a></p>
     <p><a href="https://www.linkedin.com/in/uday-verma0906/" target="_blank">LinkedIn</a></p>

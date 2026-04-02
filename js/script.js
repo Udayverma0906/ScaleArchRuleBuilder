@@ -180,13 +180,11 @@ function usePattern(idx) {
 
   document.getElementById('message').value = p.message;
   document.getElementById('hint').value = p.hint;
-  document.getElementById('category').value = p.category;
 
-  // Auto-set language dropdown if the pattern has a language
-  const langEl = document.getElementById('ruleLanguage');
-  if (langEl && p.language) {
-    langEl.value = p.language;
-  }
+  // Use setCustomSelect to sync both hidden input and pill/dropdown UI state
+  setCustomSelect('category', p.category);
+  if (p.language) setCustomSelect('ruleLanguage', p.language);
+  setCustomSelect('contextType', p.context || 'none');
 
   showNotif(`✓ Pattern applied — "${p.name}"`);
   document.getElementById('regexPattern').scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -500,8 +498,14 @@ function openConfirmModal(onYes, onNo) {
   _confirmOnNo  = onNo  || null;
 
   // Reset to step 1
-  document.getElementById('confirmStep1').style.display = 'block';
-  document.getElementById('confirmStep2').style.display = 'none';
+  const s1 = document.getElementById('confirmStep1');
+  const s2 = document.getElementById('confirmStep2');
+  if (!s1 || !s2) {
+    console.error('[ScaleArch] confirmModal steps not found — is confirmModal HTML in index.html?');
+    return;
+  }
+  s1.style.display = 'block';
+  s2.style.display = 'none';
 
   // Quality gate — warn if hint/message are weak
   const hint    = document.getElementById('hint').value.trim();
@@ -540,8 +544,10 @@ function confirmCopy() {
 
 function showConfirmStep2() {
   if (_confirmOnNo) { closeConfirmModal(); _confirmOnNo(); return; }
-  document.getElementById('confirmStep1').style.display = 'none';
-  document.getElementById('confirmStep2').style.display = 'block';
+  const cs1 = document.getElementById('confirmStep1');
+  const cs2 = document.getElementById('confirmStep2');
+  if (cs1) cs1.style.display = 'none';
+  if (cs2) cs2.style.display = 'block';
 }
 
 function confirmVerify() {
@@ -607,6 +613,121 @@ function showNotif(msg, isWarn, withProgress = false, duration = 3000) {
   }, duration);
 }
 
+
+// ══ CUSTOM SELECT COMPONENTS ══════════════════════════
+// Replaces native <select> elements for consistent cross-platform UI.
+// All three components (category, language, context) write their
+// value to a hidden <input> so the rest of the code reads them
+// identically to before via document.getElementById('...').value
+
+// ── Pill grid (category + language) ──
+// selectPill(btn) — called by onclick on each pill button
+window.selectPill = function(btn) {
+  const targetId = btn.dataset.target;
+  const value    = btn.dataset.value;
+
+  // Update hidden input
+  document.getElementById(targetId).value = value;
+
+  // Update selected state within same group
+  const group = btn.closest('.custom-pill-grid');
+  group.querySelectorAll('.cpill').forEach(p => p.classList.remove('cpill-selected'));
+  btn.classList.add('cpill-selected');
+
+  // Fire input event so existing listeners (step pills, category sync) still work
+  document.getElementById(targetId).dispatchEvent(new Event('input', { bubbles: true }));
+  document.getElementById(targetId).dispatchEvent(new Event('change', { bubbles: true }));
+};
+
+// ── Custom dropdown (context type) ──
+window.toggleDropdown = function(dropdownId) {
+  const wrapper = document.getElementById(dropdownId);
+  const menu    = wrapper.querySelector('.cdd-menu');
+  const isOpen  = menu.style.display !== 'none';
+
+  // Close all other open dropdowns first
+  document.querySelectorAll('.cdd-menu').forEach(m => m.style.display = 'none');
+  document.querySelectorAll('.custom-dropdown').forEach(d => {
+    d.classList.remove('cdd-open', 'cdd-up');
+  });
+
+  if (!isOpen) {
+    menu.style.display = 'block';
+    wrapper.classList.add('cdd-open');
+
+    // Detect if menu overflows viewport below → open upward instead
+    const rect    = menu.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    if (spaceBelow < 20 && spaceAbove > rect.height) {
+      wrapper.classList.add('cdd-up');
+    }
+  }
+};
+
+window.selectDropdown = function(dropdownId, targetId, btn, label) {
+  const value = btn.dataset.value;
+
+  // Update hidden input
+  document.getElementById(targetId).value = value;
+
+  // Update trigger label
+  document.getElementById(dropdownId).querySelector('.cdd-value').textContent = label;
+
+  // Update selected state in menu
+  btn.closest('.cdd-menu').querySelectorAll('.cdd-option').forEach(o => o.classList.remove('cdd-selected'));
+  btn.classList.add('cdd-selected');
+
+  // Close menu
+  btn.closest('.cdd-menu').style.display = 'none';
+  document.getElementById(dropdownId).classList.remove('cdd-open');
+
+  // Fire change event so contextType listener fires (shows/hides multiline fields)
+  document.getElementById(targetId).dispatchEvent(new Event('change', { bubbles: true }));
+};
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.custom-dropdown')) {
+    document.querySelectorAll('.cdd-menu').forEach(m => m.style.display = 'none');
+    document.querySelectorAll('.custom-dropdown').forEach(d => d.classList.remove('cdd-open'));
+  }
+});
+
+// Programmatic setter — used by usePattern() to sync pill/dropdown state
+// when a pattern is applied from the library
+window.setCustomSelect = function(targetId, value) {
+  const el = document.getElementById(targetId);
+  if (!el) return;
+  el.value = value;
+
+  // Sync pill grid if present
+  const pills = document.querySelectorAll(`.cpill[data-target="${targetId}"]`);
+  if (pills.length > 0) {
+    pills.forEach(p => p.classList.toggle('cpill-selected', p.dataset.value === value));
+    return;
+  }
+
+  // Sync custom dropdown if present
+  const dd = document.querySelector(`.custom-dropdown:has(#${targetId})`);
+  if (!dd) {
+    // fallback: find dropdown wrapping hidden input
+    const hidden = document.getElementById(targetId);
+    if (hidden) {
+      const parent = hidden.closest('.custom-dropdown');
+      if (parent) {
+        const opt = parent.querySelector(`.cdd-option[data-value="${value}"]`);
+        if (opt) {
+          const label = opt.dataset.label || opt.textContent.trim();
+          parent.querySelector('.cdd-value').textContent = label;
+          parent.querySelectorAll('.cdd-option').forEach(o => o.classList.remove('cdd-selected'));
+          opt.classList.add('cdd-selected');
+        }
+      }
+    }
+  }
+};
+// ══════════════════════════════════════════════════════
 // ── HELPERS ──
 function toCamelCase(str) {
   return str
@@ -641,8 +762,10 @@ document.addEventListener('DOMContentLoaded', () => {
   Popup.register('infoModal');
   Popup.register('confirmModal', {
     onClose: () => {
-      document.getElementById('confirmStep1').style.display = 'block';
-      document.getElementById('confirmStep2').style.display = 'none';
+      const s1 = document.getElementById('confirmStep1');
+      const s2 = document.getElementById('confirmStep2');
+      if (s1) s1.style.display = 'block';
+      if (s2) s2.style.display = 'none';
     },
   });
   document.getElementById('infoBtn').addEventListener('click', () => Popup.open('infoModal'));
