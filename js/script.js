@@ -489,12 +489,11 @@ function copyCode() {
 }
 
 // ── CONFIRMATION MODAL ──────────────────────────────
-// Reusable component. To use elsewhere:
-//   openConfirmModal(onYes, onNo)  — both optional callbacks
-// Default behaviour: yes = copy code, no = show verify step
+// Reusable. Call openConfirmModal(onYes, onNo) with optional
+// callbacks. Defaults: yes = copy code, no = show verify step.
 
-let _confirmOnYes  = null;
-let _confirmOnNo   = null;
+let _confirmOnYes = null;
+let _confirmOnNo  = null;
 
 function openConfirmModal(onYes, onNo) {
   _confirmOnYes = onYes || null;
@@ -504,18 +503,13 @@ function openConfirmModal(onYes, onNo) {
   document.getElementById('confirmStep1').style.display = 'block';
   document.getElementById('confirmStep2').style.display = 'none';
 
-  // Quality check — warn if hint is missing or very short
+  // Quality gate — warn if hint/message are weak
   const hint    = document.getElementById('hint').value.trim();
   const message = document.getElementById('message').value.trim();
   const qEl     = document.getElementById('confirmQualityCheck');
   const issues  = [];
-
-  if (!hint || hint.length < 20) {
-    issues.push('⚠️ Your <b>hint</b> is empty or very short — developers won\'t know how to fix the issue.');
-  }
-  if (!message || message.length < 10) {
-    issues.push('⚠️ Your <b>message</b> is too short — it\'s what appears in the squiggly tooltip.');
-  }
+  if (!hint || hint.length < 20)    issues.push(`⚠️ Your <b>hint</b> is empty or very short — developers won't know how to fix the issue.`);
+  if (!message || message.length < 10) issues.push(`⚠️ Your <b>message</b> is too short — it's what appears in the squiggly tooltip.`);
 
   if (issues.length > 0) {
     qEl.innerHTML = issues.map(i => `<div class="confirm-quality-issue">${i}</div>`).join('');
@@ -534,11 +528,7 @@ function closeConfirmModal() {
 
 function confirmCopy() {
   closeConfirmModal();
-  if (_confirmOnYes) {
-    _confirmOnYes();
-    return;
-  }
-  // Default: copy the generated code
+  if (_confirmOnYes) { _confirmOnYes(); return; }
   navigator.clipboard.writeText(state.generated).then(() => {
     const btn = document.getElementById('copyBtn');
     btn.textContent = '✓ Copied!';
@@ -549,12 +539,7 @@ function confirmCopy() {
 }
 
 function showConfirmStep2() {
-  if (_confirmOnNo) {
-    closeConfirmModal();
-    _confirmOnNo();
-    return;
-  }
-  // Default: show "verify now?" step
+  if (_confirmOnNo) { closeConfirmModal(); _confirmOnNo(); return; }
   document.getElementById('confirmStep1').style.display = 'none';
   document.getElementById('confirmStep2').style.display = 'block';
 }
@@ -622,17 +607,6 @@ function showNotif(msg, isWarn, withProgress = false, duration = 3000) {
   }, duration);
 }
 
-// ── HELP MODAL ACCORDION ──
-function toggleHelpSection(index) {
-  const body    = document.getElementById('helpSectionBody' + index);
-  const section = document.getElementById('helpSection' + index);
-  const toggle  = section?.querySelector('.help-section-toggle');
-  const isOpen  = body.style.display !== 'none';
-
-  body.style.display = isOpen ? 'none' : 'block';
-  toggle?.setAttribute('aria-expanded', String(!isOpen));
-}
-
 // ── HELPERS ──
 function toCamelCase(str) {
   return str
@@ -663,20 +637,31 @@ document.addEventListener('DOMContentLoaded', () => {
     this.classList.toggle('invalid', !validateRuleName(name) && name !== '');
   });
 
-  // ── Register all modals with the base Popup system ──
+  // ── Register modals ──
   Popup.register('infoModal');
   Popup.register('confirmModal', {
     onClose: () => {
-      // Reset back to step 1 for next open
       document.getElementById('confirmStep1').style.display = 'block';
       document.getElementById('confirmStep2').style.display = 'none';
     },
   });
-
   document.getElementById('infoBtn').addEventListener('click', () => Popup.open('infoModal'));
 
-  // ── Load help modal from external file, then register ──
-  fetch('help-modal.html')
+  // ── Load data files — critical, must succeed ──
+  Promise.all([
+    fetch('data/pattern-library.json').then(r => r.json()),
+    fetch('data/ast-nodes.json').then(r => r.json()),
+  ])
+  .then(([patterns, astNodes]) => {
+    window.PATTERN_LIBRARY = patterns;
+    window.AST_NODES       = astNodes;
+    buildNodePicker();
+    buildPatternList();
+  })
+  .catch(err => console.error('[ScaleArch] Failed to load data:', err));
+
+  // ── Load help modal — optional, failure does not block UI ──
+  fetch('modals/help-modal.html')
     .then(r => r.text())
     .then(html => {
       document.body.insertAdjacentHTML('beforeend', html);
@@ -691,13 +676,10 @@ document.addEventListener('DOMContentLoaded', () => {
           });
         },
       });
-      document.getElementById('helpBtn').addEventListener('click', () => Popup.open('helpModal'));
+      const helpBtn = document.getElementById('helpBtn');
+      if (helpBtn) helpBtn.addEventListener('click', () => Popup.open('helpModal'));
     })
-    .catch(() => console.warn('[ScaleArch] help-modal.html not found'));
-
-  // Build AST node picker and pattern library
-  buildNodePicker();
-  buildPatternList();
+    .catch(() => console.warn('[ScaleArch] help-modal.html not found — help button disabled'));
 
   // Theme toggle
   const themeToggle = document.getElementById('themeToggle');
@@ -716,3 +698,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // Init
   setType('regex');
 });
+
+// ── HELP MODAL ACCORDION ──
+// On window so onclick="toggleHelpSection()" in the
+// dynamically-fetched modal HTML can resolve it.
+window.toggleHelpSection = function(index) {
+  const body   = document.getElementById('helpSectionBody' + index);
+  const section = document.getElementById('helpSection' + index);
+  const toggle  = section?.querySelector('.help-section-toggle');
+  const isOpen  = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  toggle?.setAttribute('aria-expanded', String(!isOpen));
+};

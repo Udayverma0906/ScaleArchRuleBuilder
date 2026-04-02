@@ -21,7 +21,7 @@
   </div>
   <div class="header-controls">
     <button id="themeToggle" class="theme-toggle" title="Toggle theme"></button>
-     <button id="helpBtn" class="help-btn">✦ Confused?</button>
+    <button id="helpBtn" class="help-btn">✦ Confused?</button>
     <button id="infoBtn" class="info-btn">Details</button>
   </div>
 </header>
@@ -374,11 +374,10 @@
   </div>
 </div>
 
-<script src="popup.js" defer></script>
-<script src="script.js" defer></script>
-<script src="regex-pattern.js" defer></script>
-<script src="ast-nodes.js" defer></script>
-<script src="verify-rule.js" defer></script>
+<!-- popup must load before script.js since script.js calls Popup.register() -->
+<script src="js/popup.js" defer></script>
+<script src="js/script.js" defer></script>
+<script src="js/verify-rule.js" defer></script>
 
 </body>
 </html>
