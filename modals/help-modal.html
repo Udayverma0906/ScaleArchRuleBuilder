@@ -153,7 +153,7 @@
 
           <div class="help-two-col">
             <div class="help-card help-card-green">
-              <div class="help-card-title">✓ Use AST when…</div>
+              <div class="help-card-title">✓ Use JS/TS AST when…</div>
               <ul class="help-card-list">
                 <li>You need to know function length in lines</li>
                 <li>You need to count methods in a class</li>
@@ -168,14 +168,18 @@
                 <li>A regex on the line would work fine</li>
                 <li>You're looking for a string pattern</li>
                 <li>You want to detect a function call by name</li>
-                <li>You're working with Python, Java, or C++</li>
                 <li>You want something fast and simple</li>
               </ul>
             </div>
           </div>
 
+          <div class="help-explainer" style="margin-top:16px;">
+            <p><b>Python AST</b> — ScaleArch also supports structure-aware rules for Python. Switch the <b>AST language</b> toggle to <b>Python</b> in the builder. The generated code uses <code>PythonRuleCheck</code> signature and goes into <b>Section 4</b> of <code>customRules.ts</code>.</p>
+            <p>Python AST nodes use <code>_type</code> instead of <code>type</code>, and <code>lineno</code> instead of <code>loc</code>. The builder handles this automatically.</p>
+          </div>
+
           <div class="help-example-block">
-            <div class="help-example-label">Built-in example — <code>solid/srp</code></div>
+            <div class="help-example-label">Built-in example — <code>solid/srp</code> (JS/TS AST)</div>
             <div class="help-example-desc">Flags any class with more than 10 methods — a sign it's doing too much (Single Responsibility Principle). Regex cannot count methods; AST can.</div>
             <pre class="help-code">export function checkSRP(node: any): RuleResult | null {
   if (node.type !== 'ClassDeclaration') return null;
@@ -218,17 +222,72 @@
 }</pre>
           </div>
 
+          <div class="help-example-block">
+            <div class="help-example-label">Python AST example — detect empty except blocks</div>
+            <div class="help-example-desc">Flags Python <code>except</code> blocks that only contain <code>pass</code> — silently swallowing the exception. Switch the AST language toggle to Python, select <b>ExceptHandler</b>, then paste into Section 4 of customRules.ts.</div>
+            <pre class="help-code">function checkPyEmptyExcept(node, _cfg, makeDiag) {
+  if (node._type !== 'ExceptHandler') return null;
+
+  const body = node.body ?? [];
+  const isOnlyPass = body.length === 1 && body[0]._type === 'Pass';
+  if (!isOnlyPass) return null;
+
+  return makeDiag(
+    node,
+    'Empty except block — exception silently swallowed',
+    vscode.DiagnosticSeverity.Warning,
+    'custom/py-empty-except'
+  );
+}</pre>
+          </div>
+
         </div>
       </div>
 
-      <!-- ══ SECTION 4 — Links ══ -->
-      <div class="help-section" id="helpSection3">
-        <button class="help-section-toggle" onclick="toggleHelpSection(3)" aria-expanded="false">
+      <!-- ══ SECTION 4 — Custom Section 4 ══ -->
+      <div class="help-section" id="helpSection3b">
+        <button class="help-section-toggle" onclick="toggleHelpSection('3b')" aria-expanded="false">
           <span class="help-section-num">04</span>
+          <span class="help-section-label">Custom Python AST rules — Section 4 of customRules.ts</span>
+          <span class="help-section-chevron">▾</span>
+        </button>
+        <div class="help-section-body" id="helpSectionBody3b" style="display:none;">
+          <div class="help-explainer">
+            <p><b>Section 4</b> was added to <code>customRules.ts</code> in v1.2.0 to support custom Python AST rules. It works identically to Section 2 (JS/TS AST) but uses the <code>PythonRuleCheck</code> type and the <code>CUSTOM_PYTHON_AST_RULES</code> array.</p>
+            <p>Generated code from this builder (when Python AST language is selected) is ready to paste directly into Section 4.</p>
+          </div>
+          <div class="help-example-block">
+            <div class="help-example-label">Where to paste — customRules.ts Section 4</div>
+            <pre class="help-code">// ── SECTION 4 — Custom Python AST Rules ───────────
+// Paste generated Python AST functions here
+
+function checkPyYourRule(node, cfg, makeDiag) {
+  if (node._type !== 'FunctionDef') return null;
+  // ... your check ...
+  return makeDiag(node, 'message', vscode.DiagnosticSeverity.Warning, 'custom/py-your-rule');
+}
+
+export const CUSTOM_PYTHON_AST_RULES: PythonRuleCheck[] = [
+  checkPyStringConcat,   // built-in example
+  checkPyYourRule,       // ← add your function here
+];</pre>
+          </div>
+          <div class="help-explainer">
+            <p><b>Requirements:</b> Python 3.8+ must be installed. Set <code>scalearch.pythonPath</code> in VS Code settings if Python is not on your PATH.</p>
+            <p><b>Node properties</b> use <code>_type</code> (not <code>type</code>), and line numbers via <code>node.lineno</code> / <code>node.end_lineno</code> (1-based).</p>
+            <p><b>Tip:</b> Run <code>python3 -c "import ast; print(ast.dump(ast.parse('your code')))"</code> to inspect the exact node shape for any Python code.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ SECTION 5 — Links ══ -->
+      <div class="help-section" id="helpSection4">
+        <button class="help-section-toggle" onclick="toggleHelpSection(4)" aria-expanded="false">
+          <span class="help-section-num">05</span>
           <span class="help-section-label">Useful resources</span>
           <span class="help-section-chevron">▾</span>
         </button>
-        <div class="help-section-body" id="helpSectionBody3" style="display:none;">
+        <div class="help-section-body" id="helpSectionBody4" style="display:none;">
           <div class="help-links">
 
             <a class="help-link" href="https://regex101.com" target="_blank" rel="noopener">

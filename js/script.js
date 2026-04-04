@@ -12,15 +12,26 @@ let state = {
 
 
 // ── BUILD NODE PICKER ──
+// Filters AST_NODES by current astLanguage selection (js-ts or python)
 function buildNodePicker() {
+  const lang   = document.getElementById('astLanguage')?.value || 'js-ts';
   const picker = document.getElementById('nodePicker');
-  picker.innerHTML = AST_NODES.map(n => `
+  const filtered = AST_NODES.filter(n => (n.language || 'js-ts') === lang);
+  picker.innerHTML = filtered.map(n => `
     <div class="node-pill" id="pill-${n.id}">
       <span class="node-pill-label" onclick="toggleNodeType('${n.id}')">${n.id}</span>
       <span class="node-pill-info" onclick="showNodeInfo('${n.id}')" title="Details">ⓘ</span>
     </div>
   `).join('');
 }
+
+// Called when AST language toggle changes — clears selection and rebuilds
+window.rebuildNodePicker = function() {
+  selectedNodes.clear();
+  document.getElementById('astNodeType').value = '';
+  state.nodeType = '';
+  buildNodePicker();
+};
 
 // ── SEVERITY ──
 function setSev(s) {
@@ -39,7 +50,7 @@ function setType(t) {
   document.getElementById('ast-section').style.display   = t === 'ast'   ? 'flex' : 'none';
   if (t === 'ast') document.getElementById('ast-section').style.flexDirection = 'column';
   document.getElementById('regex-section').style.flexDirection = 'column';
-  updateStepPills(2);
+  checkDetectionComplete();
 }
 
 // ── AST NODE SELECTION (multi) ──
@@ -282,15 +293,18 @@ function generate() {
       hint:    'vscode.DiagnosticSeverity.Hint',
     };
 
+    const astLang = document.getElementById('astLanguage')?.value || 'js-ts';
     const code = state.type === 'regex'
       ? generateRegex(category, ruleName, message, hint, sevMap[sev])
-      : generateAst(category, ruleName, message, hint, sevMap[sev]);
+      : astLang === 'python'
+        ? generatePythonAst(category, ruleName, message, hint, sevMap[sev])
+        : generateAst(category, ruleName, message, hint, sevMap[sev]);
 
     state.generated = code;
     document.getElementById('verifyBtn').disabled = false;
     renderCode(syntaxHighlight(code));
     updateInstructions();
-    updateStepPills(3);
+    updateStepPills(4);
     document.getElementById('emptyState').style.display = 'none';
     document.getElementById('codeWrap').style.display = 'block';
     document.getElementById('codeWrap').scrollIntoView({ behavior: 'smooth' });
@@ -465,6 +479,67 @@ ${checkMap[checkType]}
 // ];`;
 }
 
+// ── PYTHON AST CODE GEN ──
+function generatePythonAst(cat, name, msg, hint, sev) {
+  const rawNodeTypes = document.getElementById('astNodeType').value.trim() || 'FunctionDef';
+  const nodeTypeList = rawNodeTypes.split('|').map(s => s.trim()).filter(Boolean);
+  const fnName       = toCamelCase('checkPy-' + name);
+  const id           = `${cat}/${name}`;
+
+  const nodeTypesLiteral = nodeTypeList.map(t => `'${t}'`).join(', ');
+  const nodeTypesComment = nodeTypeList.join(' | ');
+  const guardLine = nodeTypeList.length === 1
+    ? `  if (node._type !== '${nodeTypeList[0]}') return null;`
+    : `  if (![${nodeTypesLiteral}].includes(node._type)) return null;`;
+
+  const sevLabel = sev.replace('vscode.DiagnosticSeverity.', '');
+
+  return `// ─── Rule: ${id} ───────────────────────────────────
+// Category  : ${cat}
+// Type      : Python AST — per-node check
+// Nodes     : ${nodeTypesComment}
+// Severity  : ${sevLabel}
+// Generated : ScaleArch Rule Builder
+
+function ${fnName}(
+  node,     // current Python AST node (_type, lineno, col_offset etc.)
+  cfg,      // VS Code workspace configuration (for reading thresholds)
+  makeDiag  // helper: makeDiag(node, message, severity, code)
+) {
+  // Only process ${nodeTypesComment} nodes
+${guardLine}
+
+  // ── Your check goes here ──────────────────────────
+  // Examples:
+  //   node.name          → function/class name string
+  //   node.body          → list of child statement nodes
+  //   node.args.args     → list of parameter nodes
+  //   node.lineno        → start line (1-based)
+  //   node.end_lineno    → end line (1-based)
+
+  // TODO: replace this condition with your actual check
+  const shouldFlag = false;
+  if (!shouldFlag) return null;
+
+  return makeDiag(
+    node,
+    '${msg.replace(/'/g, "\'")}',
+    ${sev},
+    '${id}'
+  );
+}
+
+// ─── Register it ───────────────────────────────────
+// Add to CUSTOM_PYTHON_AST_RULES in customRules.ts:
+// export const CUSTOM_PYTHON_AST_RULES: PythonRuleCheck[] = [
+//   ...existing,
+//   ${fnName},   // ← add this
+// ];
+//
+// Tip: run python3 -c "import ast; print(ast.dump(ast.parse('your code')))"
+// to see exact node shapes for your Python code.`;
+}
+
 // ── SYNTAX HIGHLIGHT ──
 function syntaxHighlight(code) {
   return code
@@ -570,10 +645,23 @@ function updateInstructions() {
   document.getElementById('instrStep3').style.display = isAst ? 'flex' : 'none';
   document.getElementById('finalStep').textContent    = isAst ? '4' : '3';
 
-  if (isAst) {
+  const astLang = document.getElementById('astLanguage')?.value || 'js-ts';
+  if (isAst && astLang === 'python') {
+    document.getElementById('instrStep2Title').textContent = 'Paste the function into customRules.ts';
+    document.getElementById('instrStep2Body').innerHTML =
+      'Find <span class="inline-code">// Section 4</span> in <span class="inline-code">customRules.ts</span> and paste the generated function above the export array.';
+    const s3t = document.getElementById('instrStep3Title');
+    const s3b = document.getElementById('instrStep3Body');
+    if (s3t) s3t.textContent = 'Register in CUSTOM_PYTHON_AST_RULES';
+    if (s3b) s3b.innerHTML = 'Add your function name to the <span class="inline-code">CUSTOM_PYTHON_AST_RULES</span> array at the bottom of Section 4.';
+  } else if (isAst) {
     document.getElementById('instrStep2Title').textContent = 'Paste the function into customRules.ts';
     document.getElementById('instrStep2Body').innerHTML =
       'Find <span class="inline-code">// Section 2</span> in <span class="inline-code">customRules.ts</span> and paste the generated function above the export array.';
+    const s3t = document.getElementById('instrStep3Title');
+    const s3b = document.getElementById('instrStep3Body');
+    if (s3t) s3t.textContent = 'Register in CUSTOM_AST_CHECKS';
+    if (s3b) s3b.innerHTML = 'Add your function name to the <span class="inline-code">CUSTOM_AST_CHECKS</span> array at the bottom of Section 2.';
   } else {
     document.getElementById('instrStep2Title').textContent = 'Add to CUSTOM_REGEX_RULES array';
     document.getElementById('instrStep2Body').innerHTML =
@@ -585,6 +673,22 @@ function updateInstructions() {
 function updateStepPills(activeStep) {
   for (let i = 1; i <= 4; i++) {
     document.getElementById(`pill-${i}`).classList.toggle('active', i <= activeStep);
+  }
+}
+
+// ── DETECTION COMPLETE CHECK ──
+function checkDetectionComplete() {
+  const cat = document.getElementById('category').value;
+  const nm  = document.getElementById('ruleName').value.trim();
+  const msg = document.getElementById('message').value.trim();
+  if (!cat || !nm || !msg) return;
+
+  if (state.type === 'regex') {
+    const pattern = document.getElementById('regexPattern').value.trim();
+    if (pattern) updateStepPills(3);
+  } else {
+    const nodeType = document.getElementById('astNodeType').value.trim();
+    if (nodeType) updateStepPills(3);
   }
 }
 
@@ -758,6 +862,10 @@ document.addEventListener('DOMContentLoaded', () => {
     this.classList.toggle('invalid', !validateRuleName(name) && name !== '');
   });
 
+  // Advance to pill 3 when detection is configured
+  document.getElementById('regexPattern').addEventListener('input', checkDetectionComplete);
+  document.getElementById('astNodeType').addEventListener('input', checkDetectionComplete);
+
   // ── Register modals ──
   Popup.register('infoModal');
   Popup.register('confirmModal', {
@@ -790,7 +898,8 @@ document.addEventListener('DOMContentLoaded', () => {
       document.body.insertAdjacentHTML('beforeend', html);
       Popup.register('helpModal', {
         onOpen: () => {
-          [0, 1, 2, 3].forEach(i => {
+          // All section IDs — numeric + string for Python AST section
+          [0, 1, 2, '3b', 4].forEach(i => {
             const body   = document.getElementById('helpSectionBody' + i);
             const toggle = document.querySelector('#helpSection' + i + ' .help-section-toggle');
             if (!body) return;
@@ -820,14 +929,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Init
   setType('regex');
+  updateStepPills(1);
 });
 
 // ── HELP MODAL ACCORDION ──
 // On window so onclick="toggleHelpSection()" in the
 // dynamically-fetched modal HTML can resolve it.
 window.toggleHelpSection = function(index) {
-  const body   = document.getElementById('helpSectionBody' + index);
+  const body    = document.getElementById('helpSectionBody' + index);
   const section = document.getElementById('helpSection' + index);
+  if (!body) return;
   const toggle  = section?.querySelector('.help-section-toggle');
   const isOpen  = body.style.display !== 'none';
   body.style.display = isOpen ? 'none' : 'block';

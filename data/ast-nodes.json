@@ -9,7 +9,8 @@
       "node.body (block)",
       "node.async",
       "node.loc (line numbers)"
-    ]
+    ],
+    "language": "js-ts"
   },
   {
     "id": "ArrowFunctionExpression",
@@ -20,7 +21,8 @@
       "node.body",
       "node.async",
       "node.expression (true if body is not a block)"
-    ]
+    ],
+    "language": "js-ts"
   },
   {
     "id": "FunctionExpression",
@@ -31,7 +33,8 @@
       "node.params",
       "node.body",
       "node.async"
-    ]
+    ],
+    "language": "js-ts"
   },
   {
     "id": "ClassDeclaration",
@@ -41,7 +44,8 @@
       "node.id.name (class name)",
       "node.body.body (method list)",
       "node.superClass"
-    ]
+    ],
+    "language": "js-ts"
   },
   {
     "id": "MethodDefinition",
@@ -52,7 +56,8 @@
       "node.kind (\"constructor\"|\"method\"|\"get\"|\"set\")",
       "node.static",
       "node.value (the function)"
-    ]
+    ],
+    "language": "js-ts"
   },
   {
     "id": "CatchClause",
@@ -61,7 +66,8 @@
     "props": [
       "node.param (the error variable, e.g. e)",
       "node.body.body (statements inside catch)"
-    ]
+    ],
+    "language": "js-ts"
   },
   {
     "id": "CallExpression",
@@ -71,7 +77,8 @@
       "node.callee.name (fn name, e.g. \"fetch\")",
       "node.callee.property.name (method name)",
       "node.arguments (arg list)"
-    ]
+    ],
+    "language": "js-ts"
   },
   {
     "id": "NewExpression",
@@ -80,7 +87,8 @@
     "props": [
       "node.callee.name (class name)",
       "node.arguments"
-    ]
+    ],
+    "language": "js-ts"
   },
   {
     "id": "Literal",
@@ -90,7 +98,8 @@
       "node.value (the actual value)",
       "node.raw (the raw source text)",
       "typeof node.value for type check"
-    ]
+    ],
+    "language": "js-ts"
   },
   {
     "id": "BlockStatement",
@@ -99,7 +108,8 @@
     "props": [
       "node.body (array of statements inside)",
       "node.body.length (count statements)"
-    ]
+    ],
+    "language": "js-ts"
   },
   {
     "id": "IfStatement",
@@ -109,7 +119,8 @@
       "node.test (the condition)",
       "node.consequent (if body)",
       "node.alternate (else body, or null)"
-    ]
+    ],
+    "language": "js-ts"
   },
   {
     "id": "ImportDeclaration",
@@ -118,7 +129,8 @@
     "props": [
       "node.source.value (the module path, e.g. \"@company/db\")",
       "node.specifiers (what is imported)"
-    ]
+    ],
+    "language": "js-ts"
   },
   {
     "id": "VariableDeclaration",
@@ -127,7 +139,8 @@
     "props": [
       "node.kind (\"const\"|\"let\"|\"var\")",
       "node.declarations (array of declarators)"
-    ]
+    ],
+    "language": "js-ts"
   },
   {
     "id": "ReturnStatement",
@@ -136,7 +149,8 @@
     "props": [
       "node.argument (the returned value, or null for bare return)",
       "node.loc (line number of the return)"
-    ]
+    ],
+    "language": "js-ts"
   },
   {
     "id": "TryStatement",
@@ -146,7 +160,8 @@
       "node.block (the try body)",
       "node.handler (the CatchClause, or null if no catch)",
       "node.finalizer (the finally block, or null)"
-    ]
+    ],
+    "language": "js-ts"
   },
   {
     "id": "ThrowStatement",
@@ -154,7 +169,8 @@
     "example": "throw new Error('Something failed');  // \u2190 ThrowStatement\nthrow 'bad string error';             // \u2190 ThrowStatement (anti-pattern)",
     "props": [
       "node.argument (the thrown value \u2014 check if it's a NewExpression with callee.name === 'Error')"
-    ]
+    ],
+    "language": "js-ts"
   },
   {
     "id": "AssignmentExpression",
@@ -164,7 +180,8 @@
       "node.operator ('=' | '+=' | '-=' | '*=' etc.)",
       "node.left (what is being assigned to)",
       "node.right (the value being assigned)"
-    ]
+    ],
+    "language": "js-ts"
   },
   {
     "id": "MemberExpression",
@@ -174,7 +191,8 @@
       "node.object (the object being accessed)",
       "node.property (the property \u2014 use node.property.name for dot access)",
       "node.computed (true if obj[key] syntax)"
-    ]
+    ],
+    "language": "js-ts"
   },
   {
     "id": "TemplateLiteral",
@@ -184,6 +202,117 @@
       "node.expressions (array of interpolated ${...} values)",
       "node.quasis (the static string parts between expressions)",
       "node.expressions.length (0 = no interpolation \u2014 pure static string)"
+    ],
+    "language": "js-ts"
+  },
+  {
+    "id": "FunctionDef",
+    "language": "python",
+    "desc": "A Python function definition. Use to check function length, docstrings, type hints, or parameter count.",
+    "example": "def greet(name: str) -> str:\n    \"\"\"Returns a greeting.\"\"\"\n    return f'Hello {name}'",
+    "props": [
+      "node.name (function name string)",
+      "node.args.args (list of arg nodes)",
+      "node.body (list of statement nodes)",
+      "node.returns (return annotation node, or null)",
+      "node.lineno / node.end_lineno (line range)",
+      "node.col_offset"
+    ]
+  },
+  {
+    "id": "AsyncFunctionDef",
+    "language": "python",
+    "desc": "An async Python function definition. Same shape as FunctionDef but for async def.",
+    "example": "async def fetch_user(user_id: int) -> dict:\n    \"\"\"Fetches user from database.\"\"\"\n    return await db.get(user_id)",
+    "props": [
+      "node.name (function name string)",
+      "node.args.args (list of arg nodes)",
+      "node.body (list of statement nodes)",
+      "node.returns (return annotation node, or null)",
+      "node.lineno / node.end_lineno"
+    ]
+  },
+  {
+    "id": "ClassDef",
+    "language": "python",
+    "desc": "A Python class definition. Use to count methods, check for docstrings, or check inheritance.",
+    "example": "class OrderService:\n    \"\"\"Handles order operations.\"\"\"\n\n    def __init__(self, repo):\n        self.repo = repo\n\n    def get_order(self, order_id):\n        return self.repo.find(order_id)",
+    "props": [
+      "node.name (class name string)",
+      "node.body (list of nodes \u2014 methods, class vars etc.)",
+      "node.bases (list of base class nodes)",
+      "node.lineno / node.end_lineno",
+      "filter body for FunctionDef to get methods"
+    ]
+  },
+  {
+    "id": "ExceptHandler",
+    "language": "python",
+    "desc": "An except block in a try/except statement. Use to detect bare except, broad Exception catch, or empty handlers.",
+    "example": "try:\n    risky_op()\nexcept ValueError as e:   # \u2190 ExceptHandler\n    logger.error(e)\nexcept:                    # \u2190 bare ExceptHandler (type is null)",
+    "props": [
+      "node.type (the exception class node, or null for bare except:)",
+      "node.name (the 'as e' variable name, or null)",
+      "node.body (list of statements inside the handler)",
+      "node.lineno"
+    ]
+  },
+  {
+    "id": "Assign",
+    "language": "python",
+    "desc": "A variable assignment: x = value. Different from type-annotated assignments (AnnAssign). Used to count self.x = ... in __init__.",
+    "example": "x = 10                    # \u2190 Assign\nself.name = data['name']  # \u2190 Assign (target is Attribute)\nresult = compute()        # \u2190 Assign",
+    "props": [
+      "node.targets (list of target nodes \u2014 usually one)",
+      "node.value (the right-hand side node)",
+      "node.lineno",
+      "target._type === 'Attribute' and target.value.id === 'self' to detect self.x ="
+    ]
+  },
+  {
+    "id": "Return",
+    "language": "python",
+    "desc": "A return statement. Use to check what a function returns, or detect missing returns.",
+    "example": "def get_value():\n    return 42        # \u2190 Return (argument is Constant)\n\ndef early_exit(x):\n    if not x:\n        return       # \u2190 Return (argument is null \u2014 bare return)",
+    "props": [
+      "node.value (the returned value node, or null for bare return)",
+      "node.lineno"
+    ]
+  },
+  {
+    "id": "Import",
+    "language": "python",
+    "desc": "A Python import statement. Use to detect banned imports or count total imports.",
+    "example": "import os           # \u2190 Import\nimport sys, json    # \u2190 Import (multiple names)",
+    "props": [
+      "node.names (list of alias nodes)",
+      "node.names[0].name (the module name string)",
+      "node.names[0].asname (the alias, or null)",
+      "node.lineno"
+    ]
+  },
+  {
+    "id": "ImportFrom",
+    "language": "python",
+    "desc": "A from X import Y statement. Use to detect specific imports from banned modules.",
+    "example": "from os import path         # \u2190 ImportFrom\nfrom typing import Optional # \u2190 ImportFrom",
+    "props": [
+      "node.module (the module name string, e.g. 'os')",
+      "node.names (list of alias nodes for what is imported)",
+      "node.lineno"
+    ]
+  },
+  {
+    "id": "Call",
+    "language": "python",
+    "desc": "Any function or method call. Use to detect calls to banned functions like eval(), exec(), or print().",
+    "example": "eval(code)               # \u2190 Call (func.id = 'eval')\nprint('debug')           # \u2190 Call (func.id = 'print')\nobj.method(arg)          # \u2190 Call (func is Attribute)",
+    "props": [
+      "node.func._type === 'Name' \u2192 node.func.id (bare function name)",
+      "node.func._type === 'Attribute' \u2192 node.func.attr (method name)",
+      "node.args (list of positional argument nodes)",
+      "node.keywords (list of keyword argument nodes)",
+      "node.lineno"
     ]
   }
 ]

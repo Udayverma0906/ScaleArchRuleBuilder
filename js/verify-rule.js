@@ -1,6 +1,11 @@
 function openVerification() {
   if (!state.generated) return;
-  const prompt = generateVerificationPrompt();
+  const astLang = document.getElementById('astLanguage')?.value || 'js-ts';
+  const prompt = state.type === 'regex'
+    ? generateVerificationPrompt()
+    : astLang === 'python'
+      ? generatePythonAstVerificationPrompt()
+      : generateVerificationPrompt();
   
   // Copy prompt to clipboard then open Claude
   navigator.clipboard.writeText(prompt).then(() => {
@@ -427,4 +432,63 @@ WHAT I NEED FROM YOU
    Do NOT change the range-building pattern or the return structure.
 
 6. One-line summary: VALID or NEEDS FIX, and why.`;
+}
+// ── PYTHON AST VERIFICATION PROMPT ──────────────────────────────────
+function generatePythonAstVerificationPrompt() {
+  const category  = document.getElementById('category').value      || '(not set)';
+  const ruleName  = document.getElementById('ruleName').value      || '(not set)';
+  const message   = document.getElementById('message').value       || '(not set)';
+  const hint      = document.getElementById('hint').value          || '(not set)';
+  const severity  = document.querySelector('.sev-btn.selected')?.dataset.sev || 'warning';
+  const nodeTypes = document.getElementById('astNodeType').value   || '(not set)';
+  const code      = state.generated || '(no code generated yet)';
+
+  return `You are reviewing a custom Python AST rule for the ScaleArch VS Code extension.
+
+═══════════════════════════════════════════════════════════
+RULE DETAILS
+═══════════════════════════════════════════════════════════
+ID         : ${category}/${ruleName}
+Category   : ${category}
+Severity   : ${severity}
+Node types : ${nodeTypes}
+Message    : ${message}
+Hint       : ${hint}
+Language   : Python AST (requires Python 3.8+)
+
+═══════════════════════════════════════════════════════════
+GENERATED CODE
+═══════════════════════════════════════════════════════════
+${code}
+
+═══════════════════════════════════════════════════════════
+SCALEARCH PYTHON AST RULE STRUCTURE
+═══════════════════════════════════════════════════════════
+A PythonRuleCheck has this signature:
+  (node, cfg, makeDiag) => vscode.Diagnostic | null
+
+Where:
+  node     — Python AST node with _type, lineno, col_offset, end_lineno
+  cfg      — VS Code workspace configuration for reading thresholds
+  makeDiag — (node, message, severity, code) => Diagnostic
+
+Key differences from JS/TS AST rules:
+  - Use node._type (not node.type)
+  - Use node.lineno / node.end_lineno (1-based, not loc.start.line)
+  - PythonNode is defined in src/rules/types.ts
+  - Goes in CUSTOM_PYTHON_AST_RULES (Section 4 of customRules.ts)
+  - Requires Python 3.8+ installed on the user's machine
+
+═══════════════════════════════════════════════════════════
+PLEASE REVIEW THE FOLLOWING
+═══════════════════════════════════════════════════════════
+1. Is the _type guard correct for the intended Python AST node?
+2. Does the logic correctly identify the anti-pattern in real Python code?
+3. Are there false positives? (code that would be flagged but is actually fine)
+4. Are there false negatives? (code that should be flagged but is missed)
+5. Is the message clear and actionable for a Python developer?
+6. Is the hint specific enough — does it explain WHY and HOW to fix?
+7. Is the makeDiag call correct (node, message, severity, code)?
+
+If anything is wrong, provide a corrected version of the function.`;
 }

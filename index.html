@@ -199,6 +199,15 @@
             <strong>How AST rules work:</strong> your function receives one node at a time from the syntax tree. Return <code style="color:var(--accent3)">null</code> to skip, return a <code style="color:var(--accent3)">RuleResult</code> to flag it.
           </div>
 
+          <div class="field">
+            <label>AST language</label>
+            <input type="hidden" id="astLanguage" value="js-ts"/>
+            <div class="custom-pill-grid" id="astLanguagePills">
+              <button type="button" class="cpill cpill-selected" data-target="astLanguage" data-value="js-ts"   onclick="selectPill(this);rebuildNodePicker()">JS / TS</button>
+              <button type="button" class="cpill"                data-target="astLanguage" data-value="python"  onclick="selectPill(this);rebuildNodePicker()">Python</button>
+            </div>
+          </div>
+
           <!-- Node picker — click selects, click again on info icon shows detail card -->
           <div class="field">
             <label><span class="required">*</span> AST node type
@@ -323,8 +332,8 @@
           <div class="step-card" id="instrStep3" style="display:none;">
             <div class="step-num">3</div>
             <div class="step-content">
-              <h3>Register in CUSTOM_AST_CHECKS</h3>
-              <p>Also add your function name to the <span class="inline-code">CUSTOM_AST_CHECKS</span> array at the bottom of Section 2.</p>
+              <h3 id="instrStep3Title" >Register in CUSTOM_AST_CHECKS</h3>
+              <p id="instrStep3Body" >Also add your function name to the <span class="inline-code">CUSTOM_AST_CHECKS</span> array at the bottom of Section 2.</p>
             </div>
           </div>
           <div class="step-card">
@@ -357,7 +366,7 @@
   <div class="modal-content">
     <span class="close" data-popup-close>&times;</span>
     <h2>ScaleArch Rule Builder</h2>
-    <p><strong>Version: </strong>v3.2.1</p>
+    <p><strong>Version: </strong>v3.3.1</p>
     <p>
   <strong>Created by:</strong> 
   <a href="https://www.linkedin.com/in/uday-verma0906/" target="_blank" rel="noopener noreferrer">
