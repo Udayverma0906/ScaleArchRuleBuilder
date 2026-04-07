@@ -15,6 +15,7 @@
     --accent3: #3dd6a8;
     --text: #f0f0f8;
     --text-muted: #9090b8; /* Increased contrast for better visibility */
+    --white: #fff;
     --text-dim: #606080; /* Adjusted for better contrast */
     --mono: 'IBM Plex Mono', monospace;
     --display: 'Syne', sans-serif;
@@ -1684,7 +1685,7 @@
   .confirm-body {
     font-family: var(--mono);
     font-size: 12px;
-    color: var(--text-muted);
+    color: var(--white);
     line-height: 1.7;
     margin-bottom: 16px;
   }
