@@ -366,7 +366,7 @@
   <div class="modal-content">
     <span class="close" data-popup-close>&times;</span>
     <h2>ScaleArch Rule Builder</h2>
-    <p><strong>Version: </strong>v3.3.1</p>
+    <p><strong>Version: </strong>v3.3.2</p>
     <p>
   <strong>Created by:</strong> 
   <a href="https://www.linkedin.com/in/uday-verma0906/" target="_blank" rel="noopener noreferrer">
@@ -403,7 +403,15 @@
   </div>
 </div>
 
-<!-- popup must load before script.js since script.js calls Popup.register() -->
+<!-- Utilities — load before generators and script -->
+<script src="js/highlight.js" defer></script>
+
+<!-- Code generators — one per rule type -->
+<script src="js/generators/regex.js" defer></script>
+<script src="js/generators/ast-jsts.js" defer></script>
+<script src="js/generators/ast-python.js" defer></script>
+
+<!-- Core — popup must load before script.js -->
 <script src="js/popup.js" defer></script>
 <script src="js/script.js" defer></script>
 <script src="js/verify-rule.js" defer></script>

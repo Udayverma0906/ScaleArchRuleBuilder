@@ -1,5 +1,14 @@
 // ══════════════════════════════════════════════════════
 //  ScaleArch Rule Builder — script.js
+//  Orchestrator: state, UI, step pills, pattern library,
+//  node picker, modals, and generate() routing.
+//
+//  Code generation is split across:
+//    generators/regex.js      → generateRegex()
+//    generators/ast-jsts.js   → generateAst()
+//    generators/ast-python.js → generatePythonAst()
+//  Syntax highlighting:
+//    highlight.js             → syntaxHighlight(), renderCode()
 // ══════════════════════════════════════════════════════
 
 // ── STATE ──
@@ -9,7 +18,6 @@ let state = {
   nodeType: '',
   generated: '',
 };
-
 
 // ── BUILD NODE PICKER ──
 // Filters AST_NODES by current astLanguage selection (js-ts or python)
@@ -25,13 +33,64 @@ function buildNodePicker() {
   `).join('');
 }
 
-// Called when AST language toggle changes — clears selection and rebuilds
+// Called when AST language toggle changes — clears selection, rebuilds
+// node picker AND the "What to check" dropdown for the active language.
 window.rebuildNodePicker = function() {
   selectedNodes.clear();
   document.getElementById('astNodeType').value = '';
   state.nodeType = '';
   buildNodePicker();
+  rebuildAstCheckDropdown();
 };
+
+// Rebuild "What to check" dropdown from the active generator's checks array.
+// JS/TS → JSTS_AST_CHECKS   Python → PYTHON_AST_CHECKS   Java → JAVA_AST_CHECKS (future)
+function rebuildAstCheckDropdown() {
+  const lang = document.getElementById('astLanguage')?.value || 'js-ts';
+  const checksMap = {
+    'js-ts':  typeof JSTS_AST_CHECKS   !== 'undefined' ? JSTS_AST_CHECKS   : [],
+    'python': typeof PYTHON_AST_CHECKS !== 'undefined' ? PYTHON_AST_CHECKS : [],
+    // 'java': typeof JAVA_AST_CHECKS !== 'undefined' ? JAVA_AST_CHECKS : [],
+  };
+  const checks = checksMap[lang] ?? [];
+  if (checks.length === 0) return;
+
+  const menu   = document.getElementById('astCheckDropdownMenu');
+  const label  = document.getElementById('astCheckDropdownLabel');
+  const hidden = document.getElementById('astCheck');
+
+  // Rebuild menu options
+  menu.innerHTML = checks.map((c, i) => {
+    // Escape single quotes in label for safe inline onclick attribute
+    const safeLabel = c.label.replace(/'/g, "\'");
+    return `<button type="button" class="cdd-option${i === 0 ? ' cdd-selected' : ''}"
+      data-value="${c.value}"
+      onclick="selectDropdown('astCheckDropdown','astCheck',this,'${safeLabel}')"
+    >${c.label}</button>`;
+  }).join('');
+
+  // Reset to first option
+  hidden.value      = checks[0].value;
+  label.textContent = checks[0].label;
+
+  // Show/hide threshold and name fields based on first option config
+  applyCheckFieldVisibility(checks[0]);
+}
+
+// Show/hide threshold and callee fields based on a check config object
+function applyCheckFieldVisibility(checkConfig) {
+  const tf = document.getElementById('thresholdField');
+  const cf = document.getElementById('calleeField');
+  if (!tf || !cf) return;
+
+  tf.style.display       = checkConfig.hasThreshold ? 'flex' : 'none';
+  tf.style.flexDirection = 'column';
+  tf.style.gap           = '8px';
+
+  cf.style.display       = checkConfig.hasName ? 'flex' : 'none';
+  cf.style.flexDirection = 'column';
+  cf.style.gap           = '8px';
+}
 
 // ── SEVERITY ──
 function setSev(s) {
@@ -93,34 +152,21 @@ function closeNodeInfo() {
 }
 
 // ── AST CHECK CHANGE ──
+// Reads field visibility config from the active language's checks array
+// instead of hardcoded value lists — so new languages just work automatically.
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('astCheck').addEventListener('change', function() {
-    const v = this.value;
-    const showThreshold = ['param-count','method-count','line-count'].includes(v);
-    const showCallee    = ['callee-name','declared-name','method-name'].includes(v);
-
-    const tf = document.getElementById('thresholdField');
-    const cf = document.getElementById('calleeField');
-    tf.style.display = showThreshold ? 'flex' : 'none';
-    cf.style.display = showCallee    ? 'flex' : 'none';
-    tf.style.flexDirection = 'column'; tf.style.gap = '8px';
-    cf.style.flexDirection = 'column'; cf.style.gap = '8px';
-
-    const labelEl = document.getElementById('calleeLabel');
-    const inputEl = document.getElementById('astCallee');
-    if (v === 'callee-name') {
-      labelEl.textContent  = 'Function name being called';
-      inputEl.placeholder  = 'e.g. fetch, eval, require';
-    } else if (v === 'declared-name') {
-      labelEl.textContent  = 'Function name being declared';
-      inputEl.placeholder  = 'e.g. oldProv, legacyHelper';
-    } else if (v === 'method-name') {
-      labelEl.textContent  = 'Method name inside class';
-      inputEl.placeholder  = 'e.g. oldMethod, deprecatedFn';
-    }
+    const v    = this.value;
+    const lang = document.getElementById('astLanguage')?.value || 'js-ts';
+    const checksMap = {
+      'js-ts':  typeof JSTS_AST_CHECKS   !== 'undefined' ? JSTS_AST_CHECKS   : [],
+      'python': typeof PYTHON_AST_CHECKS !== 'undefined' ? PYTHON_AST_CHECKS : [],
+    };
+    const checks = checksMap[lang] ?? [];
+    const config = checks.find(c => c.value === v);
+    if (config) applyCheckFieldVisibility(config);
   });
 });
-
 
 let activeCategory = 'all';
 let activeSearch   = '';
@@ -174,11 +220,9 @@ function usePattern(idx) {
   const p = PATTERN_LIBRARY[idx];
   if (!p) return;
 
-  // Fill in pattern and context
   document.getElementById('regexPattern').value = p.pattern;
   document.getElementById('contextType').value  = p.context;
 
-  // Show/hide multiline fields and fill them if the pattern uses multiline mode
   const isMulti = p.context && p.context.startsWith('multiline');
   const mf = document.getElementById('multilineFields');
   mf.style.display = isMulti ? 'flex' : 'none';
@@ -190,9 +234,8 @@ function usePattern(idx) {
   }
 
   document.getElementById('message').value = p.message;
-  document.getElementById('hint').value = p.hint;
+  document.getElementById('hint').value    = p.hint;
 
-  // Use setCustomSelect to sync both hidden input and pill/dropdown UI state
   setCustomSelect('category', p.category);
   if (p.language) setCustomSelect('ruleLanguage', p.language);
   setCustomSelect('contextType', p.context || 'none');
@@ -207,7 +250,6 @@ function escapeHtml(str) {
     .replace(/</g,'&lt;')
     .replace(/>/g,'&gt;');
 }
-
 
 // ── TEST REGEX ──
 function testRegex() {
@@ -235,13 +277,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Enter') testRegex();
   });
 
-  // Show/hide multiline fields when context changes
   document.getElementById('contextType').addEventListener('change', function() {
     const isMulti = this.value.startsWith('multiline');
     const mf = document.getElementById('multilineFields');
     mf.style.display = isMulti ? 'flex' : 'none';
 
-    // Pre-fill sensible defaults based on which multiline mode
     if (this.value === 'multiline-keyword') {
       document.getElementById('multilineAnchor').placeholder = 'e.g. SELECT (anchor line keyword)';
       document.getElementById('multilineCount').placeholder  = 'e.g. JOIN (keyword to count)';
@@ -250,7 +290,6 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('multilineCount').placeholder  = 'e.g. import (keyword to count)';
     }
   });
-
 });
 
 // ── GENERATE RULE CODE ──
@@ -269,7 +308,6 @@ function generate() {
     return;
   }
 
-  // Show loading state
   const btn = document.querySelector('.generate-btn');
   const originalText = btn.innerHTML;
   btn.innerHTML = `
@@ -283,7 +321,6 @@ function generate() {
   btn.disabled = true;
   btn.style.opacity = '0.8';
 
-  // Simulate processing time for better UX
   setTimeout(() => {
     const sev = state.severity;
     const sevMap = {
@@ -309,262 +346,22 @@ function generate() {
     document.getElementById('codeWrap').style.display = 'block';
     document.getElementById('codeWrap').scrollIntoView({ behavior: 'smooth' });
 
-    // Reset button
     btn.innerHTML = originalText;
-    btn.disabled = false;
+    btn.disabled  = false;
     btn.style.opacity = '1';
 
-    // Success animation
     btn.style.transform = 'scale(1.05)';
     setTimeout(() => btn.style.transform = '', 200);
   }, 800);
 }
 
-// ── REGEX CODE GEN ──
-function generateRegex(cat, name, msg, hint, sev) {
-  const pattern   = document.getElementById('regexPattern').value.trim() || 'YOUR_PATTERN_HERE';
-  const context   = document.getElementById('contextType').value;
-  const anchor    = document.getElementById('multilineAnchor')?.value.trim() || 'SELECT';
-  const countKw   = document.getElementById('multilineCount')?.value.trim()  || 'JOIN';
-  const threshold = parseInt(document.getElementById('multilineThreshold')?.value) || 5;
-  const id        = `${cat}/${name}`;
-
-  let testFn = '';
-
-   const langValue = document.getElementById('ruleLanguage').value;
-  const langMap = {
-    'all':    null,   // no languages field — runs on everything
-    'js-ts':  `['typescript', 'javascript', 'typescriptreact', 'javascriptreact']`,
-    'python': `['python']`,
-    'java':   `['java']`,
-    'cpp':    `['cpp', 'c']`,
-  };
-  const languagesLine = langMap[langValue]
-    ? `  languages: ${langMap[langValue]},\n`
-    : '';
-
-  if (context === 'none') {
-    // ── Simple single-line match ──
-    testFn = `  test: (line) => /${pattern}/i.test(line),`;
-
-  } else if (context === 'multiline-keyword') {
-    // ── Multi-line: anchor on keyword, count target keyword in next 25 lines ──
-    testFn =
-`  test: (line, allLines, lineIndex) => {
-    // Only trigger on lines containing the anchor keyword
-    if (!/${anchor}/i.test(line)) return false;
-    // Scan the next 25 lines as one string to catch multi-line queries
-    const window = allLines.slice(lineIndex, lineIndex + 25).join(' ');
-    const count  = (window.match(/${countKw}/gi) ?? []).length;
-    return count > ${threshold};
-  },`;
-
-  } else if (context === 'multiline-count') {
-    // ── Multi-line: count pattern occurrences across next 25 lines ──
-    testFn =
-`  test: (line, allLines, lineIndex) => {
-    if (!/${anchor}/i.test(line)) return false;
-    const window = allLines.slice(lineIndex, lineIndex + 25).join(' ');
-    const count  = (window.match(/${pattern}/gi) ?? []).length;
-    return count > ${threshold};
-  },`;
-
-  } else {
-    // ── Single-line with look-back context (loop / async / class) ──
-    const ctxPattern = {
-      loop:  '\\b(for|while|forEach|map|reduce)\\b',
-      async: '\\basync\\b',
-      class: '\\bclass\\b',
-    }[context];
-    testFn =
-`  test: (line, allLines, lineIndex) => {
-    if (!/${pattern}/i.test(line)) return false;
-    for (let i = Math.max(0, lineIndex - 5); i < lineIndex; i++) {
-      if (/${ctxPattern}/.test(allLines[i])) return true;
-    }
-    return false;
-  },`;
-  }
-  return `// ─── Rule: ${id} ───────────────────────────────────
-// Category : ${cat}
-// Severity : ${sev.replace('vscode.DiagnosticSeverity.', '')}
-// Generated: ScaleArch Rule Builder
-
-{
-  id: '${id}',
-  category: '${cat}',
-  severity: ${sev},
-  message: '${msg.replace(/'/g, "\\'")}',
-  hint: '${(hint || msg).replace(/'/g, "\\'")}',
-${languagesLine}${testFn}
-},`;
-}
-
-// ── AST CODE GEN ──
-function generateAst(cat, name, msg, hint, sev) {
-  const rawNodeTypes  = document.getElementById('astNodeType').value.trim() || 'FunctionDeclaration';
-  const nodeTypeList  = rawNodeTypes.split('|').map(s => s.trim()).filter(Boolean);
-  const checkType     = document.getElementById('astCheck').value;
-  const threshold     = parseInt(document.getElementById('astThreshold').value) || 5;
-  const callee        = document.getElementById('astCallee').value.trim() || 'targetFunction';
-  const fnName        = toCamelCase('check-' + name);
-  const id            = `${cat}/${name}`;
-
-  const checkMap = {
-    'empty-body':
-`  const stmts = node.body?.body ?? node.body?.statements ?? [];
-  if (stmts.length > 0) return null;`,
-    'param-count':
-`  const params = node.params ?? [];
-  if (params.length <= ${threshold}) return null;`,
-    'method-count':
-`  const methods = (node.body?.body ?? []).filter(
-    (m) => m.type === 'MethodDefinition' && m.kind !== 'constructor'
-  );
-  if (methods.length <= ${threshold}) return null;`,
-    'line-count':
-`  if (!node.loc) return null;
-  const lines = node.loc.end.line - node.loc.start.line + 1;
-  if (lines <= ${threshold}) return null;`,
-    'callee-name':
-`  const calleeName = node.callee?.name ?? node.callee?.property?.name ?? '';
-  if (calleeName !== '${callee}') return null;`,
-    'declared-name':
-`  const declaredName = node.id?.name ?? '';
-  if (declaredName !== '${callee}') return null;`,
-    'method-name':
-`  const methodName = node.key?.name ?? '';
-  if (methodName !== '${callee}') return null;`,
-    'custom-prop':
-`  // TODO: add your custom property check here
-  // Example: if (!node.async) return null;`,
-  };
-
-  const nodeTypesLiteral = nodeTypeList.map(t => `'${t}'`).join(', ');
-  const nodeTypesComment = nodeTypeList.join(' | ');
-  const guardLine = nodeTypeList.length === 1
-    ? `  if (node.type !== '${nodeTypeList[0]}') return null;`
-    : `  if (![${nodeTypesLiteral}].includes(node.type)) return null;`;
-
-  return `// ─── Rule: ${id} ───────────────────────────────────
-// Category : ${cat}
-// Type     : AST — per-node check
-// Nodes    : ${nodeTypesComment}
-// Generated: ScaleArch Rule Builder
-
-export function ${fnName}(node: any): RuleResult | null {
-  // Only process ${nodeTypesComment} nodes
-${guardLine}
-
-${checkMap[checkType]}
-
-  const s = node.loc?.start ?? { line: 0, column: 0 };
-  const e = node.loc?.end   ?? { line: 0, column: 0 };
-  const range = new vscode.Range(s.line - 1, s.column, e.line - 1, e.column);
-
-  return {
-    range,
-    code: '${id}',
-    message: '${msg.replace(/'/g, "\\'")}',
-    hint: '${(hint || msg).replace(/'/g, "\\'")}',
-    severity: ${sev},
-  };
-}
-
-// ─── Register it ───────────────────────────────────
-// Add to CUSTOM_AST_CHECKS array in customRules.ts:
-// export const CUSTOM_AST_CHECKS = [
-//   ...existing,
-//   ${fnName},   // ← add this
-// ];`;
-}
-
-// ── PYTHON AST CODE GEN ──
-function generatePythonAst(cat, name, msg, hint, sev) {
-  const rawNodeTypes = document.getElementById('astNodeType').value.trim() || 'FunctionDef';
-  const nodeTypeList = rawNodeTypes.split('|').map(s => s.trim()).filter(Boolean);
-  const fnName       = toCamelCase('checkPy-' + name);
-  const id           = `${cat}/${name}`;
-
-  const nodeTypesLiteral = nodeTypeList.map(t => `'${t}'`).join(', ');
-  const nodeTypesComment = nodeTypeList.join(' | ');
-  const guardLine = nodeTypeList.length === 1
-    ? `  if (node._type !== '${nodeTypeList[0]}') return null;`
-    : `  if (![${nodeTypesLiteral}].includes(node._type)) return null;`;
-
-  const sevLabel = sev.replace('vscode.DiagnosticSeverity.', '');
-
-  return `// ─── Rule: ${id} ───────────────────────────────────
-// Category  : ${cat}
-// Type      : Python AST — per-node check
-// Nodes     : ${nodeTypesComment}
-// Severity  : ${sevLabel}
-// Generated : ScaleArch Rule Builder
-
-function ${fnName}(
-  node,     // current Python AST node (_type, lineno, col_offset etc.)
-  cfg,      // VS Code workspace configuration (for reading thresholds)
-  makeDiag  // helper: makeDiag(node, message, severity, code)
-) {
-  // Only process ${nodeTypesComment} nodes
-${guardLine}
-
-  // ── Your check goes here ──────────────────────────
-  // Examples:
-  //   node.name          → function/class name string
-  //   node.body          → list of child statement nodes
-  //   node.args.args     → list of parameter nodes
-  //   node.lineno        → start line (1-based)
-  //   node.end_lineno    → end line (1-based)
-
-  // TODO: replace this condition with your actual check
-  const shouldFlag = false;
-  if (!shouldFlag) return null;
-
-  return makeDiag(
-    node,
-    '${msg.replace(/'/g, "\'")}',
-    ${sev},
-    '${id}'
-  );
-}
-
-// ─── Register it ───────────────────────────────────
-// Add to CUSTOM_PYTHON_AST_RULES in customRules.ts:
-// export const CUSTOM_PYTHON_AST_RULES: PythonRuleCheck[] = [
-//   ...existing,
-//   ${fnName},   // ← add this
-// ];
-//
-// Tip: run python3 -c "import ast; print(ast.dump(ast.parse('your code')))"
-// to see exact node shapes for your Python code.`;
-}
-
-// ── SYNTAX HIGHLIGHT ──
-function syntaxHighlight(code) {
-  return code
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/(\/\/[^\n]*)/g, '<span class="tok-comment">$1</span>')
-    .replace(/\b(export|function|const|let|return|if|for|null|true|false|new)\b/g, '<span class="tok-keyword">$1</span>')
-    .replace(/\b(RuleResult|vscode|DiagnosticSeverity)\b/g, '<span class="tok-type">$1</span>')
-    .replace(/'([^']*)'/g, '<span class="tok-string">\'$1\'</span>')
-    .replace(/\b(\d+)\b(?![^<]*>)/g, '<span class="tok-num">$1</span>');
-}
-
-function renderCode(html) {
-  document.getElementById('codeOutput').innerHTML = html;
-}
-
-// ── COPY — goes through confirmation modal ──
+// ── COPY ──
 function copyCode() {
   if (!state.generated) return;
   openConfirmModal();
 }
 
-// ── CONFIRMATION MODAL ──────────────────────────────
-// Reusable. Call openConfirmModal(onYes, onNo) with optional
-// callbacks. Defaults: yes = copy code, no = show verify step.
-
+// ── CONFIRMATION MODAL ──
 let _confirmOnYes = null;
 let _confirmOnNo  = null;
 
@@ -572,22 +369,20 @@ function openConfirmModal(onYes, onNo) {
   _confirmOnYes = onYes || null;
   _confirmOnNo  = onNo  || null;
 
-  // Reset to step 1
   const s1 = document.getElementById('confirmStep1');
   const s2 = document.getElementById('confirmStep2');
   if (!s1 || !s2) {
-    console.error('[ScaleArch] confirmModal steps not found — is confirmModal HTML in index.html?');
+    console.error('[ScaleArch] confirmModal steps not found');
     return;
   }
   s1.style.display = 'block';
   s2.style.display = 'none';
 
-  // Quality gate — warn if hint/message are weak
   const hint    = document.getElementById('hint').value.trim();
   const message = document.getElementById('message').value.trim();
   const qEl     = document.getElementById('confirmQualityCheck');
   const issues  = [];
-  if (!hint || hint.length < 20)    issues.push(`⚠️ Your <b>hint</b> is empty or very short — developers won't know how to fix the issue.`);
+  if (!hint || hint.length < 20)       issues.push(`⚠️ Your <b>hint</b> is empty or very short — developers won't know how to fix the issue.`);
   if (!message || message.length < 10) issues.push(`⚠️ Your <b>message</b> is too short — it's what appears in the squiggly tooltip.`);
 
   if (issues.length > 0) {
@@ -601,9 +396,7 @@ function openConfirmModal(onYes, onNo) {
   Popup.open('confirmModal');
 }
 
-function closeConfirmModal() {
-  Popup.close('confirmModal');
-}
+function closeConfirmModal() { Popup.close('confirmModal'); }
 
 function confirmCopy() {
   closeConfirmModal();
@@ -629,7 +422,6 @@ function confirmVerify() {
   closeConfirmModal();
   openVerification();
 }
-// ────────────────────────────────────────────────────
 
 // ── TAB SWITCH ──
 function switchTab(tab, btn) {
@@ -695,61 +487,44 @@ function checkDetectionComplete() {
 // ── NOTIFICATION ──
 function showNotif(msg, isWarn, withProgress = false, duration = 3000) {
   const n = document.getElementById('notif');
-  const textEl = document.getElementById('notif-text');
+  const textEl     = document.getElementById('notif-text');
   const progressEl = document.getElementById('notif-progress');
-  
+
   textEl.textContent = msg;
   n.className = 'notif' + (isWarn ? ' warn' : '');
   n.classList.add('show');
-  
+
   if (withProgress) {
     progressEl.style.width = '0%';
     progressEl.style.transition = `width ${duration}ms linear`;
-    setTimeout(() => {
-      progressEl.style.width = '100%';
-    }, 10); // small delay to trigger transition
+    setTimeout(() => { progressEl.style.width = '100%'; }, 10);
   } else {
     progressEl.style.width = '0%';
   }
-  
-  setTimeout(() => {
-    n.classList.remove('show');
-  }, duration);
+
+  setTimeout(() => { n.classList.remove('show'); }, duration);
 }
 
-
 // ══ CUSTOM SELECT COMPONENTS ══════════════════════════
-// Replaces native <select> elements for consistent cross-platform UI.
-// All three components (category, language, context) write their
-// value to a hidden <input> so the rest of the code reads them
-// identically to before via document.getElementById('...').value
-
-// ── Pill grid (category + language) ──
-// selectPill(btn) — called by onclick on each pill button
 window.selectPill = function(btn) {
   const targetId = btn.dataset.target;
   const value    = btn.dataset.value;
 
-  // Update hidden input
   document.getElementById(targetId).value = value;
 
-  // Update selected state within same group
   const group = btn.closest('.custom-pill-grid');
   group.querySelectorAll('.cpill').forEach(p => p.classList.remove('cpill-selected'));
   btn.classList.add('cpill-selected');
 
-  // Fire input event so existing listeners (step pills, category sync) still work
-  document.getElementById(targetId).dispatchEvent(new Event('input', { bubbles: true }));
+  document.getElementById(targetId).dispatchEvent(new Event('input',  { bubbles: true }));
   document.getElementById(targetId).dispatchEvent(new Event('change', { bubbles: true }));
 };
 
-// ── Custom dropdown (context type) ──
 window.toggleDropdown = function(dropdownId) {
   const wrapper = document.getElementById(dropdownId);
   const menu    = wrapper.querySelector('.cdd-menu');
   const isOpen  = menu.style.display !== 'none';
 
-  // Close all other open dropdowns first
   document.querySelectorAll('.cdd-menu').forEach(m => m.style.display = 'none');
   document.querySelectorAll('.custom-dropdown').forEach(d => {
     d.classList.remove('cdd-open', 'cdd-up');
@@ -759,8 +534,7 @@ window.toggleDropdown = function(dropdownId) {
     menu.style.display = 'block';
     wrapper.classList.add('cdd-open');
 
-    // Detect if menu overflows viewport below → open upward instead
-    const rect    = menu.getBoundingClientRect();
+    const rect       = menu.getBoundingClientRect();
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
     if (spaceBelow < 20 && spaceAbove > rect.height) {
@@ -772,25 +546,18 @@ window.toggleDropdown = function(dropdownId) {
 window.selectDropdown = function(dropdownId, targetId, btn, label) {
   const value = btn.dataset.value;
 
-  // Update hidden input
   document.getElementById(targetId).value = value;
-
-  // Update trigger label
   document.getElementById(dropdownId).querySelector('.cdd-value').textContent = label;
 
-  // Update selected state in menu
   btn.closest('.cdd-menu').querySelectorAll('.cdd-option').forEach(o => o.classList.remove('cdd-selected'));
   btn.classList.add('cdd-selected');
 
-  // Close menu
   btn.closest('.cdd-menu').style.display = 'none';
   document.getElementById(dropdownId).classList.remove('cdd-open');
 
-  // Fire change event so contextType listener fires (shows/hides multiline fields)
   document.getElementById(targetId).dispatchEvent(new Event('change', { bubbles: true }));
 };
 
-// Close dropdown when clicking outside
 document.addEventListener('click', (e) => {
   if (!e.target.closest('.custom-dropdown')) {
     document.querySelectorAll('.cdd-menu').forEach(m => m.style.display = 'none');
@@ -798,40 +565,32 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// Programmatic setter — used by usePattern() to sync pill/dropdown state
-// when a pattern is applied from the library
 window.setCustomSelect = function(targetId, value) {
   const el = document.getElementById(targetId);
   if (!el) return;
   el.value = value;
 
-  // Sync pill grid if present
   const pills = document.querySelectorAll(`.cpill[data-target="${targetId}"]`);
   if (pills.length > 0) {
     pills.forEach(p => p.classList.toggle('cpill-selected', p.dataset.value === value));
     return;
   }
 
-  // Sync custom dropdown if present
-  const dd = document.querySelector(`.custom-dropdown:has(#${targetId})`);
-  if (!dd) {
-    // fallback: find dropdown wrapping hidden input
-    const hidden = document.getElementById(targetId);
-    if (hidden) {
-      const parent = hidden.closest('.custom-dropdown');
-      if (parent) {
-        const opt = parent.querySelector(`.cdd-option[data-value="${value}"]`);
-        if (opt) {
-          const label = opt.dataset.label || opt.textContent.trim();
-          parent.querySelector('.cdd-value').textContent = label;
-          parent.querySelectorAll('.cdd-option').forEach(o => o.classList.remove('cdd-selected'));
-          opt.classList.add('cdd-selected');
-        }
+  const hidden = document.getElementById(targetId);
+  if (hidden) {
+    const parent = hidden.closest('.custom-dropdown');
+    if (parent) {
+      const opt = parent.querySelector(`.cdd-option[data-value="${value}"]`);
+      if (opt) {
+        const label = opt.dataset.label || opt.textContent.trim();
+        parent.querySelector('.cdd-value').textContent = label;
+        parent.querySelectorAll('.cdd-option').forEach(o => o.classList.remove('cdd-selected'));
+        opt.classList.add('cdd-selected');
       }
     }
   }
 };
-// ══════════════════════════════════════════════════════
+
 // ── HELPERS ──
 function toCamelCase(str) {
   return str
@@ -856,7 +615,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Rule name validation
   document.getElementById('ruleName').addEventListener('input', function() {
     const name = this.value.trim();
     this.classList.toggle('invalid', !validateRuleName(name) && name !== '');
@@ -878,7 +636,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   document.getElementById('infoBtn').addEventListener('click', () => Popup.open('infoModal'));
 
-  // ── Load data files — critical, must succeed ──
+  // ── Load data files ──
   Promise.all([
     fetch('data/pattern-library.json').then(r => r.json()),
     fetch('data/ast-nodes.json').then(r => r.json()),
@@ -887,18 +645,18 @@ document.addEventListener('DOMContentLoaded', () => {
     window.PATTERN_LIBRARY = patterns;
     window.AST_NODES       = astNodes;
     buildNodePicker();
+    rebuildAstCheckDropdown(); // populate check dropdown for default lang (js-ts)
     buildPatternList();
   })
   .catch(err => console.error('[ScaleArch] Failed to load data:', err));
 
-  // ── Load help modal — optional, failure does not block UI ──
+  // ── Load help modal ──
   fetch('modals/help-modal.html')
     .then(r => r.text())
     .then(html => {
       document.body.insertAdjacentHTML('beforeend', html);
       Popup.register('helpModal', {
         onOpen: () => {
-          // All section IDs — numeric + string for Python AST section
           [0, 1, 2, '3b', 4].forEach(i => {
             const body   = document.getElementById('helpSectionBody' + i);
             const toggle = document.querySelector('#helpSection' + i + ' .help-section-toggle');
@@ -911,16 +669,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const helpBtn = document.getElementById('helpBtn');
       if (helpBtn) helpBtn.addEventListener('click', () => Popup.open('helpModal'));
     })
-    .catch(() => console.warn('[ScaleArch] help-modal.html not found — help button disabled'));
+    .catch(() => console.warn('[ScaleArch] help-modal.html not found'));
 
   // Theme toggle
   const themeToggle = document.getElementById('themeToggle');
-  const savedTheme = localStorage.getItem('theme') || 'dark';
-  
-  if (savedTheme === 'light') {
-    document.body.classList.add('light-mode');
-  }
-  
+  const savedTheme  = localStorage.getItem('theme') || 'dark';
+  if (savedTheme === 'light') document.body.classList.add('light-mode');
   themeToggle.addEventListener('click', () => {
     document.body.classList.toggle('light-mode');
     const isLight = document.body.classList.contains('light-mode');
@@ -933,8 +687,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ── HELP MODAL ACCORDION ──
-// On window so onclick="toggleHelpSection()" in the
-// dynamically-fetched modal HTML can resolve it.
 window.toggleHelpSection = function(index) {
   const body    = document.getElementById('helpSectionBody' + index);
   const section = document.getElementById('helpSection' + index);
