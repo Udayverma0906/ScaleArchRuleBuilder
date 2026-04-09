@@ -485,24 +485,60 @@ function checkDetectionComplete() {
 }
 
 // ── NOTIFICATION ──
-function showNotif(msg, isWarn, withProgress = false, duration = 3000) {
+let notifTimeout;
+let progressTimeout;
+
+function showNotif(msg, isWarn = false, withProgress = false, duration = 3000) {
   const n = document.getElementById('notif');
-  const textEl     = document.getElementById('notif-text');
+  const textEl = document.getElementById('notif-text');
   const progressEl = document.getElementById('notif-progress');
 
-  textEl.textContent = msg;
-  n.className = 'notif' + (isWarn ? ' warn' : '');
-  n.classList.add('show');
+  if (!n || !textEl || !progressEl) return;
 
-  if (withProgress) {
-    progressEl.style.width = '0%';
-    progressEl.style.transition = `width ${duration}ms linear`;
-    setTimeout(() => { progressEl.style.width = '100%'; }, 10);
-  } else {
-    progressEl.style.width = '0%';
+  // Clear previous timers
+  clearTimeout(notifTimeout);
+  clearTimeout(progressTimeout);
+
+  // Reset notification state
+  n.classList.remove('show', 'warn');
+
+  // Force progress reset properly
+  progressEl.style.transition = 'none';
+  progressEl.style.width = '0%';
+  progressEl.style.background = '';
+
+  // Force reflow so browser applies reset before animating again
+  void progressEl.offsetWidth;
+
+  // Set new message
+  textEl.textContent = msg;
+
+  // Add warn class if needed
+  if (isWarn) {
+    n.classList.add('warn');
   }
 
-  setTimeout(() => { n.classList.remove('show'); }, duration);
+  // Show notification
+  n.classList.add('show');
+
+  // Progress bar animation
+  if (withProgress) {
+    progressEl.style.background = isWarn ? 'var(--warn)' : '';
+
+    progressTimeout = setTimeout(() => {
+      progressEl.style.transition = `width ${duration}ms linear`;
+      progressEl.style.width = '100%';
+    }, 20);
+  }
+
+  // Hide notification
+  notifTimeout = setTimeout(() => {
+    n.classList.remove('show', 'warn');
+
+    progressEl.style.transition = 'none';
+    progressEl.style.width = '0%';
+    progressEl.style.background = '';
+  }, duration);
 }
 
 // ══ CUSTOM SELECT COMPONENTS ══════════════════════════
@@ -696,3 +732,34 @@ window.toggleHelpSection = function(index) {
   body.style.display = isOpen ? 'none' : 'block';
   toggle?.setAttribute('aria-expanded', String(!isOpen));
 };
+
+function resetRuleForm() {
+  
+  // text inputs / textarea
+  ['ruleName', 'message', 'hint'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+
+  // hidden category reset
+  document.getElementById('category').value = '';
+
+  // remove selected category pills
+  document.querySelectorAll('#categoryPills .cpill').forEach(btn => {
+    btn.classList.remove('cpill-selected');
+  });
+
+  // reset step pill
+  document.getElementById('pill-2')?.classList.remove('active');
+
+  // severity reset
+  document.querySelectorAll('.sev-btn').forEach(btn => {
+    btn.classList.remove('selected');
+  });
+  document.querySelector('[data-sev="error"]')?.classList.add('selected');
+
+  // success notif
+  if (typeof showNotif === 'function') {
+    showNotif('Rule Identity Form Reset',false,true,2000);
+  }
+}

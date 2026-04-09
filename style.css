@@ -978,6 +978,8 @@
     align-items: flex-start;
   }
 
+  .notif.warn { border-color: var(--warn); color: var(--warn); }
+
   .notif.show { transform: translateY(0); opacity: 1; }
 
   .progress-bar {
