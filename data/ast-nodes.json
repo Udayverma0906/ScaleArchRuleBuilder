@@ -314,5 +314,222 @@
       "node.keywords (list of keyword argument nodes)",
       "node.lineno"
     ]
-  }
+  },
+  {
+  "id": "AnnAssign",
+  "language": "python",
+  "desc": "Type-annotated assignment (x: int = 5). Useful for enforcing type hints.",
+  "example": "x: int = 10\nname: str = 'Uday'",
+  "props": [
+    "node.target.id (variable name string, e.g. 'x')",
+    "node.annotation.id (type name string, e.g. 'int')",
+    "node.value (assigned value node, e.g. Constant)",
+    "node.lineno"
+  ]
+},
+{
+  "id": "If",
+  "language": "python",
+  "desc": "An if statement. Use to detect deep nesting or missing else blocks.",
+  "example": "if x > 10:\n    print('big')\nelse:\n    print('small')",
+  "props": [
+    "node.test._type === 'Compare' (condition expression)",
+    "node.body (list of statements inside if)",
+    "node.orelse (else/elif block, empty if no else)",
+    "node.lineno"
+  ]
+},
+{
+  "id": "For",
+  "language": "python",
+  "desc": "A for loop. Useful for detecting nested loops or iteration patterns.",
+  "example": "for i in range(10):\n    print(i)",
+  "props": [
+    "node.target.id (loop variable name, e.g. 'i')",
+    "node.iter._type === 'Call' (e.g. range(10))",
+    "node.body (loop body statements)",
+    "node.lineno"
+  ]
+},
+{
+  "id": "While",
+  "language": "python",
+  "desc": "A while loop. Useful for detecting infinite loops.",
+  "example": "while True:\n    do_something()",
+  "props": [
+    "node.test.value === true (detect while True)",
+    "node.body (loop body)",
+    "node.lineno"
+  ]
+},
+{
+  "id": "Try",
+  "language": "python",
+  "desc": "A try block. Use to check error handling quality.",
+  "example": "try:\n    risky()\nexcept Exception:\n    pass",
+  "props": [
+    "node.handlers.length (number of except blocks)",
+    "node.handlers[0].type.id (e.g. 'Exception')",
+    "node.finalbody (finally block statements)",
+    "node.lineno"
+  ]
+},
+{
+  "id": "With",
+  "language": "python",
+  "desc": "A with statement. Useful for detecting proper resource handling.",
+  "example": "with open('file.txt') as f:\n    data = f.read()",
+  "props": [
+    "node.items[0].context_expr.func.id (e.g. 'open')",
+    "node.items[0].optional_vars.id (alias variable, e.g. 'f')",
+    "node.body (with block statements)",
+    "node.lineno"
+  ]
+},
+{
+  "id": "Attribute",
+  "language": "python",
+  "desc": "Attribute access (obj.prop). Useful for detecting self usage or chained calls.",
+  "example": "self.name\nuser.profile.email",
+  "props": [
+    "node.value.id === 'self' (detect self usage)",
+    "node.attr (property name string, e.g. 'name')",
+    "node.lineno"
+  ]
+},
+{
+  "id": "Name",
+  "language": "python",
+  "desc": "A variable reference. Useful for detecting specific variable usage.",
+  "example": "x\nuser_id",
+  "props": [
+    "node.id (variable name string, e.g. 'x')",
+    "node.ctx._type === 'Load' (read usage)",
+    "node.lineno"
+  ]
+},
+{
+  "id": "Constant",
+  "language": "python",
+  "desc": "A constant value (string, number, etc.).",
+  "example": "42\n'hello'\nTrue",
+  "props": [
+    "node.value (actual value, e.g. 42 or 'hello')",
+    "typeof node.value === 'string' (detect strings)",
+    "node.lineno"
+  ]
+},
+{
+  "id": "Compare",
+  "language": "python",
+  "desc": "A comparison expression (x > 5, a == b).",
+  "example": "x > 10\nuser == admin",
+  "props": [
+    "node.left.id (left variable, e.g. 'x')",
+    "node.ops[0]._type (e.g. 'Gt', 'Eq')",
+    "node.comparators[0].value (right side value)",
+    "node.lineno"
+  ]
+},
+{
+  "id": "BoolOp",
+  "language": "python",
+  "desc": "Boolean operations (and/or).",
+  "example": "x > 5 and y < 10",
+  "props": [
+    "node.op._type === 'And' or 'Or'",
+    "node.values.length (number of conditions)",
+    "node.lineno"
+  ]
+},
+{
+  "id": "BinOp",
+  "language": "python",
+  "desc": "Binary operations (+, -, *, /).",
+  "example": "a + b\nx * y",
+  "props": [
+    "node.left.id (left operand)",
+    "node.op._type (e.g. 'Add', 'Mult')",
+    "node.right.id (right operand)",
+    "node.lineno"
+  ]
+},
+{
+  "id": "Lambda",
+  "language": "python",
+  "desc": "Lambda (anonymous function).",
+  "example": "lambda x: x + 1",
+  "props": [
+    "node.args.args[0].arg (parameter name, e.g. 'x')",
+    "node.body._type (expression type)",
+    "node.lineno"
+  ]
+},
+{
+  "id": "ListComp",
+  "language": "python",
+  "desc": "List comprehension. Useful for detecting complexity.",
+  "example": "[x for x in range(10)]",
+  "props": [
+    "node.generators[0].target.id (loop variable, e.g. 'x')",
+    "node.generators[0].iter.func.id (e.g. 'range')",
+    "node.elt (output expression)",
+    "node.lineno"
+  ]
+},
+{
+  "id": "Dict",
+  "language": "python",
+  "desc": "Dictionary literal.",
+  "example": "{'name': 'Uday'}",
+  "props": [
+    "node.keys[0].value (key string, e.g. 'name')",
+    "node.values[0].value (value, e.g. 'Uday')",
+    "node.lineno"
+  ]
+},
+{
+  "id": "List",
+  "language": "python",
+  "desc": "List literal.",
+  "example": "[1, 2, 3]",
+  "props": [
+    "node.elts.length (number of elements)",
+    "node.elts[0].value (first value)",
+    "node.lineno"
+  ]
+},
+{
+  "id": "Tuple",
+  "language": "python",
+  "desc": "Tuple literal.",
+  "example": "(1, 2, 3)",
+  "props": [
+    "node.elts.length (number of elements)",
+    "node.elts[0].value",
+    "node.lineno"
+  ]
+},
+{
+  "id": "Raise",
+  "language": "python",
+  "desc": "Raise statement. Useful for enforcing error handling patterns.",
+  "example": "raise ValueError('Invalid input')",
+  "props": [
+    "node.exc.func.id (exception type, e.g. 'ValueError')",
+    "node.exc.args[0].value (error message string)",
+    "node.lineno"
+  ]
+},
+{
+  "id": "Assert",
+  "language": "python",
+  "desc": "Assert statement. Often used in debugging.",
+  "example": "assert x > 0",
+  "props": [
+    "node.test._type === 'Compare'",
+    "node.msg (optional message node)",
+    "node.lineno"
+  ]
+}
 ]
