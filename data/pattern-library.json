@@ -21,7 +21,7 @@
     "name": "No LIMIT clause",
     "category": "database",
     "language": "all",
-    "pattern": "\\bselect\\b(?!.*\\blimit\\b)(?!.*count\\s*\\()",
+    "pattern": "(['\\\"`])\\s*SELECT\\b(?!.*\\bLIMIT\\b)|SELECT\\s+(\\*|\\w+\\s*,|\\w+\\s+FROM\\b)(?!.*\\bLIMIT\\b)",
     "message": "No LIMIT clause — risk of fetching a huge result set",
     "hint": "Always paginate results. Add LIMIT (and OFFSET) to control how many rows are returned.",
     "context": "none"
@@ -30,7 +30,7 @@
     "name": "Leading wildcard LIKE",
     "category": "database",
     "language": "all",
-    "pattern": "like\\s+['\"%]%",
+    "pattern": "like\\s+['\"]%+",
     "message": "Leading wildcard LIKE '%...' disables index usage",
     "hint": "A leading % forces a full scan. Use full-text search or a search engine for this pattern.",
     "context": "none"
@@ -60,7 +60,7 @@
     "name": "SQL query in a loop (N+1)",
     "category": "database",
     "language": "all",
-    "pattern": "\\bselect\\b",
+    "pattern": "(['\\\"`])\\s*SELECT\\b|SELECT\\s+(\\*|\\w+\\s*,|\\w+\\s+FROM\\b)",
     "message": "SQL query inside a loop — classic N+1 problem",
     "hint": "Each iteration fires a separate DB round-trip. Use a JOIN, batch query (WHERE id IN (...)), or a dataloader instead.",
     "context": "loop"
@@ -96,7 +96,7 @@
     "name": "Hardcoded IP address",
     "category": "security",
     "language": "all",
-    "pattern": "\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b",
+    "pattern": "\\b(?!255\\.255\\.255\\.255\\b)(?!0\\.0\\.0\\.0\\b)(?:\\d{1,3}\\.){3}\\d{1,3}\\b",
     "message": "Hardcoded IP address detected",
     "hint": "Hardcoded IPs make deployments fragile and may expose internal infrastructure. Use environment variables or service discovery.",
     "context": "none"
@@ -222,7 +222,7 @@
     "name": "Double equals (==)",
     "category": "code-quality",
     "language": "js-ts",
-    "pattern": "(?<!=)={2}(?!=)",
+    "pattern": "(?<![=!<>])={2}(?!=)",
     "message": "Loose equality (==) — use strict equality (===) instead",
     "hint": "== performs type coercion which leads to unexpected results (e.g. 0 == \"\" is true). Always use === for comparisons.",
     "context": "none"
