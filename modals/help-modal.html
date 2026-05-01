@@ -12,7 +12,7 @@
 
     <div class="help-modal-body">
 
-      <!-- ══ SECTION 1 — How the builder works ══ -->
+      <!-- ══ SECTION 01 — How the builder works ══ -->
       <div class="help-section" id="helpSection0">
         <button class="help-section-toggle" onclick="toggleHelpSection(0)" aria-expanded="true">
           <span class="help-section-num">01</span>
@@ -66,7 +66,7 @@
         </div>
       </div>
 
-      <!-- ══ SECTION 2 — Regex ══ -->
+      <!-- ══ SECTION 02 — Regex ══ -->
       <div class="help-section" id="helpSection1">
         <button class="help-section-toggle" onclick="toggleHelpSection(1)" aria-expanded="false">
           <span class="help-section-num">02</span>
@@ -129,11 +129,11 @@
         </div>
       </div>
 
-      <!-- ══ SECTION 3 — AST ══ -->
+      <!-- ══ SECTION 03 — JS/TS AST ══ -->
       <div class="help-section" id="helpSection2">
         <button class="help-section-toggle" onclick="toggleHelpSection(2)" aria-expanded="false">
           <span class="help-section-num">03</span>
-          <span class="help-section-label">AST rules — structure-aware analysis</span>
+          <span class="help-section-label">JS / TS AST rules — structure-aware analysis</span>
           <span class="help-section-chevron">▾</span>
         </button>
         <div class="help-section-body" id="helpSectionBody2" style="display:none;">
@@ -173,11 +173,6 @@
             </div>
           </div>
 
-          <div class="help-explainer" style="margin-top:16px;">
-            <p><b>Python AST</b> — ScaleArch also supports structure-aware rules for Python. Switch the <b>AST language</b> toggle to <b>Python</b> in the builder. The generated code uses <code>PythonRuleCheck</code> signature and goes into <b>Section 4</b> of <code>customRules.ts</code>.</p>
-            <p>Python AST nodes use <code>_type</code> instead of <code>type</code>, and <code>lineno</code> instead of <code>loc</code>. The builder handles this automatically.</p>
-          </div>
-
           <div class="help-example-block">
             <div class="help-example-label">Built-in example — <code>solid/srp</code> (JS/TS AST)</div>
             <div class="help-example-desc">Flags any class with more than 10 methods — a sign it's doing too much (Single Responsibility Principle). Regex cannot count methods; AST can.</div>
@@ -187,7 +182,7 @@
   const methods = node.body.body.filter(
     m => m.type === 'MethodDefinition' && m.kind !== 'constructor'
   );
-  if (methods.length <= 10) return null;
+  if (methods.length &lt;= 10) return null;
 
   return {
     range: makeRange(node),
@@ -222,9 +217,52 @@
 }</pre>
           </div>
 
+          <div class="help-explainer" style="margin-top:16px;">
+            <p><b>Tip:</b> Paste any TypeScript or JavaScript into <a href="https://astexplorer.net" target="_blank" rel="noopener">astexplorer.net</a> and select <b>@typescript-eslint/parser</b> — this is the exact parser ScaleArch uses. Click any node to see its type and all available properties.</p>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ══ SECTION 04 — Python AST ══ -->
+      <div class="help-section" id="helpSection3b">
+        <button class="help-section-toggle" onclick="toggleHelpSection('3b')" aria-expanded="false">
+          <span class="help-section-num">04</span>
+          <span class="help-section-label">Python AST rules — Section 4 of customRules.ts</span>
+          <span class="help-section-chevron">▾</span>
+        </button>
+        <div class="help-section-body" id="helpSectionBody3b" style="display:none;">
+          <div class="help-explainer">
+            <p><b>Section 4</b> was added to <code>customRules.ts</code> in v1.2.0 to support custom Python AST rules. It works identically to Section 2 (JS/TS AST) but uses the <code>PythonRuleCheck</code> type and the <code>CUSTOM_PYTHON_AST_RULES</code> array.</p>
+            <p>Generated code from this builder (when <b>Python</b> AST language is selected) is ready to paste directly into Section 4.</p>
+          </div>
+
+          <div class="help-two-col">
+            <div class="help-card help-card-green">
+              <div class="help-card-title">✓ Python node properties</div>
+              <ul class="help-card-list">
+                <li><code>node._type</code> — node type (underscore prefix)</li>
+                <li><code>node.lineno</code> / <code>node.end_lineno</code> — line numbers (1-based)</li>
+                <li><code>node.name</code> — function or class name string</li>
+                <li><code>node.args.args</code> — list of parameter nodes</li>
+                <li><code>node.body</code> — flat list of child statements</li>
+              </ul>
+            </div>
+            <div class="help-card help-card-red">
+              <div class="help-card-title">✗ JS/TS patterns that break in Python</div>
+              <ul class="help-card-list">
+                <li><code>node.type</code> → use <code>node._type</code></li>
+                <li><code>node.loc.start.line</code> → use <code>node.lineno</code></li>
+                <li><code>node.id?.name</code> → use <code>node.name</code></li>
+                <li><code>node.params</code> → use <code>node.args.args</code></li>
+                <li><code>node.body.body</code> → use <code>node.body</code></li>
+              </ul>
+            </div>
+          </div>
+
           <div class="help-example-block">
             <div class="help-example-label">Python AST example — detect empty except blocks</div>
-            <div class="help-example-desc">Flags Python <code>except</code> blocks that only contain <code>pass</code> — silently swallowing the exception. Switch the AST language toggle to Python, select <b>ExceptHandler</b>, then paste into Section 4 of customRules.ts.</div>
+            <div class="help-example-desc">Flags Python <code>except</code> blocks that only contain <code>pass</code> — silently swallowing the exception.</div>
             <pre class="help-code">function checkPyEmptyExcept(node, _cfg, makeDiag) {
   if (node._type !== 'ExceptHandler') return null;
 
@@ -236,26 +274,17 @@
     node,
     'Empty except block — exception silently swallowed',
     vscode.DiagnosticSeverity.Warning,
-    'custom/py-empty-except'
+    'custom/py-empty-except',
+    'Bare pass in except hides bugs. At minimum log the error: except Exception as e: logger.error(e)'
   );
-}</pre>
+}
+
+// Register in customRules.ts Section 4:
+export const CUSTOM_PYTHON_AST_RULES: PythonRuleCheck[] = [
+  checkPyEmptyExcept,   // ← add here
+];</pre>
           </div>
 
-        </div>
-      </div>
-
-      <!-- ══ SECTION 4 — Custom Section 4 ══ -->
-      <div class="help-section" id="helpSection3b">
-        <button class="help-section-toggle" onclick="toggleHelpSection('3b')" aria-expanded="false">
-          <span class="help-section-num">04</span>
-          <span class="help-section-label">Custom Python AST rules — Section 4 of customRules.ts</span>
-          <span class="help-section-chevron">▾</span>
-        </button>
-        <div class="help-section-body" id="helpSectionBody3b" style="display:none;">
-          <div class="help-explainer">
-            <p><b>Section 4</b> was added to <code>customRules.ts</code> in v1.2.0 to support custom Python AST rules. It works identically to Section 2 (JS/TS AST) but uses the <code>PythonRuleCheck</code> type and the <code>CUSTOM_PYTHON_AST_RULES</code> array.</p>
-            <p>Generated code from this builder (when Python AST language is selected) is ready to paste directly into Section 4.</p>
-          </div>
           <div class="help-example-block">
             <div class="help-example-label">Where to paste — customRules.ts Section 4</div>
             <pre class="help-code">// ── SECTION 4 — Custom Python AST Rules ───────────
@@ -264,26 +293,150 @@
 function checkPyYourRule(node, cfg, makeDiag) {
   if (node._type !== 'FunctionDef') return null;
   // ... your check ...
-  return makeDiag(node, 'message', vscode.DiagnosticSeverity.Warning, 'custom/py-your-rule');
+  return makeDiag(node, 'message', vscode.DiagnosticSeverity.Warning,
+    'custom/py-your-rule', 'hint text here');
 }
 
 export const CUSTOM_PYTHON_AST_RULES: PythonRuleCheck[] = [
   checkPyStringConcat,   // built-in example
-  checkPyYourRule,       // ← add your function here
+  checkPyYourRule,       // ← add your function name here
 ];</pre>
           </div>
+
           <div class="help-explainer">
             <p><b>Requirements:</b> Python 3.8+ must be installed. Set <code>scalearch.pythonPath</code> in VS Code settings if Python is not on your PATH.</p>
-            <p><b>Node properties</b> use <code>_type</code> (not <code>type</code>), and line numbers via <code>node.lineno</code> / <code>node.end_lineno</code> (1-based).</p>
-            <p><b>Tip:</b> Run <code>python3 -c "import ast; print(ast.dump(ast.parse('your code')))"</code> to inspect the exact node shape for any Python code.</p>
+            <p><b>Tip:</b> Run <code>python3 -c "import ast; print(ast.dump(ast.parse('your code here'), indent=2))"</code> to inspect the exact node shape for any Python snippet.</p>
           </div>
         </div>
       </div>
 
-      <!-- ══ SECTION 5 — Links ══ -->
+      <!-- ══ SECTION 05 — Java AST ══ -->
+      <div class="help-section" id="helpSection5">
+        <button class="help-section-toggle" onclick="toggleHelpSection(5)" aria-expanded="false">
+          <span class="help-section-num">05</span>
+          <span class="help-section-label">Java AST rules — Section 5 of customRules.ts</span>
+          <span class="help-section-chevron">▾</span>
+        </button>
+        <div class="help-section-body" id="helpSectionBody5" style="display:none;">
+          <div class="help-explainer">
+            <p><b>Section 5</b> was added to <code>customRules.ts</code> in v2.0.0 to support custom Java AST rules. Java uses <b>tree-sitter-java</b> — a native Node.js binding that parses Java without requiring a JDK.</p>
+            <p>Java rules are declared as <b>named consts</b> assigned to the <code>JavaRuleCheck</code> type, then the const name is added to the <code>CUSTOM_JAVA_AST_RULES</code> array — same pattern as Python and JS/TS.</p>
+            <p>Generated code from this builder (when <b>Java</b> AST language is selected) is ready to paste directly into Section 5.</p>
+          </div>
+
+          <div class="help-two-col">
+            <div class="help-card help-card-green">
+              <div class="help-card-title">✓ tree-sitter node properties</div>
+              <ul class="help-card-list">
+                <li><code>node.type</code> — node type, NO underscore (snake_case)</li>
+                <li><code>node.startPosition.row</code> — start line (0-based)</li>
+                <li><code>node.endPosition.row</code> — end line (0-based)</li>
+                <li><code>node.childForFieldName('name')?.text</code> — get named field</li>
+                <li><code>node.namedChildren</code> — children excluding syntax tokens</li>
+                <li><code>node.parent</code> — parent node (for context checks)</li>
+              </ul>
+            </div>
+            <div class="help-card help-card-red">
+              <div class="help-card-title">✗ Python / JS/TS patterns that break in Java</div>
+              <ul class="help-card-list">
+                <li><code>node._type</code> → use <code>node.type</code> (no underscore)</li>
+                <li><code>node.name</code> → use <code>node.childForFieldName('name')?.text</code></li>
+                <li><code>node.id?.name</code> → use <code>node.childForFieldName('name')?.text</code></li>
+                <li><code>node.body.body</code> → use <code>node.namedChildren</code></li>
+                <li><code>node.loc.start.line</code> → use <code>node.startPosition.row</code></li>
+                <li><code>node.params</code> → use <code>node.childForFieldName('parameters')?.namedChildren</code></li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="help-example-block">
+            <div class="help-example-label">Common Java node types (tree-sitter snake_case)</div>
+            <pre class="help-code help-code-dim">method_declaration      → public void myMethod(...) { }
+class_declaration       → public class MyClass { }
+constructor_declaration → public MyClass(...) { }
+catch_clause            → } catch (Exception e) { }
+field_declaration       → private String name;
+interface_declaration   → public interface MyService { }
+method_invocation       → System.exit(0);
+binary_expression       → status == "active"
+enhanced_for_statement  → for (String item : items) { }
+if_statement            → if (condition) { }</pre>
+          </div>
+
+          <div class="help-example-block">
+            <div class="help-example-label">Example 1 — empty catch block</div>
+            <div class="help-example-desc">Flags <code>catch</code> blocks with no statements — silently swallowing exceptions is a common Java anti-pattern.</div>
+            <pre class="help-code">const checkEmptyCatch: JavaRuleCheck = (node, _cfg, makeDiag) => {
+  if (node.type !== 'catch_clause') return null;
+
+  const body = node.childForFieldName('body');
+  if (!body) return null;
+  if (body.namedChildren.length > 0) return null;  // not empty
+
+  return makeDiag(
+    node,
+    'Empty catch block — exception is being silently swallowed',
+    vscode.DiagnosticSeverity.Error,
+    'custom/java-empty-catch',
+    'Silent catch blocks hide bugs. At minimum: catch (Exception e) { logger.error("...", e); }'
+  );
+};</pre>
+          </div>
+
+          <div class="help-example-block">
+            <div class="help-example-label">Example 2 — too many parameters</div>
+            <div class="help-example-desc">Flags methods with more than 4 parameters — a sign that a parameter object or Builder pattern is needed.</div>
+            <pre class="help-code">const checkTooManyParams: JavaRuleCheck = (node, cfg, makeDiag) => {
+  if (node.type !== 'method_declaration') return null;
+
+  const params = node.childForFieldName('parameters');
+  if (!params) return null;
+  const count = params.namedChildren.filter(
+    (c: JavaNode) => c.type === 'formal_parameter'
+  ).length;
+  if (count &lt;= 4) return null;
+
+  const name = node.childForFieldName('name')?.text ?? 'unknown';
+  return makeDiag(
+    node,
+    `Method '${name}' has ${count} parameters — use a parameter object`,
+    vscode.DiagnosticSeverity.Warning,
+    'custom/java-too-many-params',
+    'Methods with 5+ parameters are hard to call correctly and easy to misorder. Use a builder or parameter object.'
+  );
+};</pre>
+          </div>
+
+          <div class="help-example-block">
+            <div class="help-example-label">Where to paste — customRules.ts Section 5</div>
+            <pre class="help-code">// ── SECTION 5 — Custom Java AST Rules ────────────
+// Step 1: paste generated const here (above the array)
+
+const checkYourRule: JavaRuleCheck = (node, _cfg, makeDiag) => {
+  if (node.type !== 'method_declaration') return null;
+  // ... your check ...
+  return makeDiag(node, 'message', vscode.DiagnosticSeverity.Warning,
+    'custom/java-your-rule', 'hint text here');
+};
+
+// Step 2: add the const NAME to the array
+export const CUSTOM_JAVA_AST_RULES: JavaRuleCheck[] = [
+  checkYourRule,   // ← add your const name here
+];</pre>
+          </div>
+
+          <div class="help-explainer">
+            <p><b>No JDK required.</b> tree-sitter-java is a native Node.js module — it parses Java source code directly without needing Java installed.</p>
+            <p><b>Line numbers are 0-based.</b> <code>node.startPosition.row</code> is 0-based — VS Code Range is also 0-based, so no adjustment is needed. This is different from Python where <code>lineno</code> is 1-based.</p>
+            <p><b>makeDiag signature:</b> <code>makeDiag(node, message, severity, code, hint)</code> — hint is always the 5th argument, never put it in a return object.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ SECTION 06 — Links ══ -->
       <div class="help-section" id="helpSection4">
         <button class="help-section-toggle" onclick="toggleHelpSection(4)" aria-expanded="false">
-          <span class="help-section-num">05</span>
+          <span class="help-section-num">06</span>
           <span class="help-section-label">Useful resources</span>
           <span class="help-section-chevron">▾</span>
         </button>
@@ -303,7 +456,7 @@ export const CUSTOM_PYTHON_AST_RULES: PythonRuleCheck[] = [
               <div class="help-link-icon">🌳</div>
               <div class="help-link-body">
                 <div class="help-link-title">astexplorer.net</div>
-                <div class="help-link-desc">Paste any TypeScript or JavaScript and see its full AST. Select <b>@typescript-eslint/parser</b> — this is the exact parser ScaleArch uses. Click any node to see its type and properties.</div>
+                <div class="help-link-desc">Paste any TypeScript or JavaScript and see its full AST. Select <b>@typescript-eslint/parser</b> — this is the exact parser ScaleArch uses for JS/TS. Click any node to see its type and properties.</div>
               </div>
               <div class="help-link-arrow">↗</div>
             </a>
@@ -321,7 +474,16 @@ export const CUSTOM_PYTHON_AST_RULES: PythonRuleCheck[] = [
               <div class="help-link-icon">⚙️</div>
               <div class="help-link-body">
                 <div class="help-link-title">typescript-eslint — Custom Rules</div>
-                <div class="help-link-desc">Deep dive into AST rule writing. Shows all available node types, how to use selectors, and how to test custom rules. The AST concepts apply directly to ScaleArch's AST engine.</div>
+                <div class="help-link-desc">Deep dive into AST rule writing for JS/TS. Shows all available node types, how to use selectors, and how to test custom rules. The AST concepts apply directly to ScaleArch's JS/TS engine.</div>
+              </div>
+              <div class="help-link-arrow">↗</div>
+            </a>
+
+            <a class="help-link" href="https://tree-sitter.github.io/tree-sitter/" target="_blank" rel="noopener">
+              <div class="help-link-icon">🌲</div>
+              <div class="help-link-body">
+                <div class="help-link-title">tree-sitter — Java node reference</div>
+                <div class="help-link-desc">tree-sitter-java is the parser used for Java AST rules. The node types use snake_case (method_declaration, class_declaration). Use the node info cards (ⓘ) in the builder's node picker to see all available properties without leaving the page.</div>
               </div>
               <div class="help-link-arrow">↗</div>
             </a>
@@ -330,7 +492,7 @@ export const CUSTOM_PYTHON_AST_RULES: PythonRuleCheck[] = [
               <div class="help-link-icon">⭐</div>
               <div class="help-link-body">
                 <div class="help-link-title">ScaleArch on GitHub</div>
-                <div class="help-link-desc">Source code for the extension. The README has a full rules reference and step-by-step guide for adding custom rules to <code>customRules.ts</code>.</div>
+                <div class="help-link-desc">Source code for the extension. The README has a full rules reference and step-by-step guide for adding custom rules to <code>customRules.ts</code> for all supported languages.</div>
               </div>
               <div class="help-link-arrow">↗</div>
             </a>

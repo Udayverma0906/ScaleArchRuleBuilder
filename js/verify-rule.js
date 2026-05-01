@@ -5,15 +5,14 @@ function openVerification() {
     ? generateVerificationPrompt()
     : astLang === 'python'
       ? generatePythonAstVerificationPrompt()
-      : generateVerificationPrompt();
+      : astLang === 'java'
+        ? generateJavaAstVerificationPrompt()
+        : generateVerificationPrompt();
 
-  // Copy prompt to clipboard then open Claude
   navigator.clipboard.writeText(prompt).then(() => {
     let countdown = 3;
     const baseMessage = '✓ Prompt copied. Opening Claude — paste it there to verify your code.';
-
     showNotif(`${baseMessage} ${countdown}`, false, true, 3000);
-
     const interval = setInterval(() => {
       countdown--;
       if (countdown > 0) {
@@ -150,10 +149,10 @@ function generateRegexVerificationPrompt(cat, name, msg, hint, sev) {
   };
 
   const sevMap = {
-    error: 'vscode.DiagnosticSeverity.Error',
+    error:   'vscode.DiagnosticSeverity.Error',
     warning: 'vscode.DiagnosticSeverity.Warning',
-    info: 'vscode.DiagnosticSeverity.Information',
-    hint: 'vscode.DiagnosticSeverity.Hint',
+    info:    'vscode.DiagnosticSeverity.Information',
+    hint:    'vscode.DiagnosticSeverity.Hint',
   };
 
   const contextIsMultiline = context.startsWith('multiline');
@@ -253,7 +252,7 @@ EXAMPLES OF CORRECT RULES (for reference)
     if (!/\bselect\b/i.test(line)) return false;
     for (let i = Math.max(0, lineIndex - 5); i < lineIndex; i++) {
       if (/\b(for|while|forEach|map|reduce)\b/.test(allLines[i])) return true;
-   }
+    }
     return false;
   },
 }
@@ -325,10 +324,10 @@ function generateAstVerificationPrompt(cat, name, msg, hint, sev) {
   const callee    = document.getElementById('astCallee')?.value.trim();
 
   const sevMap = {
-    error: 'vscode.DiagnosticSeverity.Error',
+    error:   'vscode.DiagnosticSeverity.Error',
     warning: 'vscode.DiagnosticSeverity.Warning',
-    info: 'vscode.DiagnosticSeverity.Information',
-    hint: 'vscode.DiagnosticSeverity.Hint',
+    info:    'vscode.DiagnosticSeverity.Information',
+    hint:    'vscode.DiagnosticSeverity.Hint',
   };
 
   const checkDescriptions = {
@@ -386,6 +385,12 @@ export function checkRuleName(node: any): RuleResult | null {
   };
 }
 
+// Register in customRules.ts Section 2:
+// export const CUSTOM_AST_CHECKS = [
+//   ...existing,
+//   checkRuleName,   // ← add this
+// ];
+
 ═══════════════════════════════════════
 COMMON NODE PROPERTIES (for reference)
 ═══════════════════════════════════════
@@ -424,13 +429,13 @@ WHAT I NEED FROM YOU
 //  PYTHON AST VERIFICATION PROMPT
 // ══════════════════════════════════════════════════════
 function generatePythonAstVerificationPrompt() {
-  const category  = document.getElementById('category').value       || '(not set)';
+  const category  = document.getElementById('category').value        || '(not set)';
   const ruleName  = document.getElementById('ruleName').value.trim() || '(not set)';
-  const message   = document.getElementById('message').value.trim() || '';
-  const hint      = document.getElementById('hint').value.trim()    || '';
+  const message   = document.getElementById('message').value.trim()  || '';
+  const hint      = document.getElementById('hint').value.trim()     || '';
   const severity  = document.querySelector('.sev-btn.selected')?.dataset.sev || 'warning';
-  const nodeTypes = document.getElementById('astNodeType').value    || '(not set)';
-  const checkType = document.getElementById('astCheck').value       || '(not set)';
+  const nodeTypes = document.getElementById('astNodeType').value     || '(not set)';
+  const checkType = document.getElementById('astCheck').value        || '(not set)';
   const threshold = document.getElementById('astThreshold')?.value.trim();
   const callee    = document.getElementById('astCallee')?.value.trim();
 
@@ -445,10 +450,10 @@ function generatePythonAstVerificationPrompt() {
   };
 
   const sevMap = {
-    error: 'vscode.DiagnosticSeverity.Error',
+    error:   'vscode.DiagnosticSeverity.Error',
     warning: 'vscode.DiagnosticSeverity.Warning',
-    info: 'vscode.DiagnosticSeverity.Information',
-    hint: 'vscode.DiagnosticSeverity.Hint',
+    info:    'vscode.DiagnosticSeverity.Information',
+    hint:    'vscode.DiagnosticSeverity.Hint',
   };
 
   return `You are verifying a Python AST rule for ScaleArch — a VS Code static analysis extension.
@@ -480,8 +485,8 @@ PYTHON AST RULE STRUCTURE — DO NOT CHANGE THIS FORMAT
 ═══════════════════════════════════════
 function checkPyRuleName(
   node,     // Python AST node — _type, lineno, end_lineno, name, body etc.
-  cfg,      // VS Code workspace configuration
-  makeDiag  // makeDiag(node, message, severity, code, hint?) => Diagnostic
+  cfg,      // VS Code workspace configuration (for reading thresholds from settings)
+  makeDiag  // makeDiag(node, message, severity, code, hint?) => vscode.Diagnostic
 ) {
   if (node._type !== 'FunctionDef') return null;
 
@@ -498,36 +503,57 @@ function checkPyRuleName(
   );
 }
 
-KEY PYTHON vs JS/TS DIFFERENCES:
-  ✓ node._type  (not node.type)
-  ✓ node.lineno / node.end_lineno  (not node.loc.start.line)
-  ✓ node.name  for function/class names  (not node.id?.name)
-  ✓ node.args.args  for parameters  (not node.params)
-  ✓ node.body  is a list of statement nodes  (not node.body.body)
-  ✓ makeDiag takes hint as 5th optional argument
+// Register in customRules.ts Section 4:
+// export const CUSTOM_PYTHON_AST_RULES: PythonRuleCheck[] = [
+//   ...existing,
+//   checkPyRuleName,   // ← add this
+// ];
+
+KEY PYTHON vs JS/TS DIFFERENCES — Claude must check these:
+  ✓ node._type  (not node.type — underscore is Python only, NO underscore in JS/TS or Java)
+  ✓ node.lineno / node.end_lineno  (not node.loc.start.line — that is JS/TS)
+  ✓ node.name  for function/class names  (not node.id?.name — that is JS/TS)
+  ✓ node.args.args  for parameters  (not node.params — that is JS/TS)
+  ✓ node.body  is a flat list of statement nodes  (not node.body.body — that is JS/TS)
+  ✓ makeDiag takes hint as 5th optional argument — do NOT put hint in the return object
 
 COMMON PYTHON NODE PROPERTIES:
   FunctionDef / AsyncFunctionDef:
-    node.name, node.lineno, node.end_lineno,
-    node.args.args (list, each has .arg string),
-    node.body (list of statements), node.returns
+    node.name            → function name string (not node.id?.name)
+    node.lineno          → start line (1-based)
+    node.end_lineno      → end line (1-based)
+    node.args.args       → list of arg nodes, each has .arg string
+    node.body            → list of statement nodes
+    node.returns         → return annotation node or null
 
   ClassDef:
-    node.name, node.lineno, node.end_lineno,
-    node.body (list — filter for FunctionDef to get methods),
-    node.bases (list of base class nodes)
+    node.name            → class name string
+    node.lineno / node.end_lineno
+    node.body            → list of nodes — filter for FunctionDef to get methods
+    node.bases           → list of base class nodes
 
   ExceptHandler:
-    node.type (exception class or null for bare except),
-    node.body (list — check if only Pass)
+    node.type            → exception class node, or null for bare except:
+    node.name            → the "as e" variable name string, or null
+    node.body            → list of statements inside the handler
+
+  Call:
+    node.func._type === 'Name'      → node.func.id is the bare function name
+    node.func._type === 'Attribute' → node.func.attr is the method name
+    node.args            → list of positional argument nodes
 
 ═══════════════════════════════════════
 WHAT I NEED FROM YOU
 ═══════════════════════════════════════
 1. NODE TYPE: Is "${nodeTypes}" the correct Python AST _type for: ${checkDescriptions[checkType] || checkType}?
+   Remember: Python uses PascalCase _types (FunctionDef, ClassDef, ExceptHandler).
 
 2. PROPERTIES: Are the Python node properties correct?
-   (e.g. node.args.args ✓ for params — NOT node.params which is JS/TS)
+   Most common mistakes:
+     ✗ node.type   instead of  node._type   (JS/TS pattern — wrong for Python)
+     ✗ node.params instead of  node.args.args  (JS/TS pattern — wrong for Python)
+     ✗ node.id?.name instead of node.name   (JS/TS pattern — wrong for Python)
+     ✗ node.body.body instead of node.body  (JS/TS pattern — wrong for Python)
 
 3. EXAMPLES: Give 2 Python code examples that SHOULD trigger this rule,
    and 1 example that should NOT (false positive check).
@@ -537,11 +563,253 @@ WHAT I NEED FROM YOU
 
 5. HINT IN makeDiag: Is hint passed as the 5th argument to makeDiag?
    The signature is: makeDiag(node, message, severity, code, hint?)
-   If hint is missing from the call, flag it.
+   If hint is missing from the call or put in the wrong place, flag it.
 
 6. AST vs REGEX: Could this be a simpler regex rule? See the decision guide above.
 
-7. If anything is wrong, provide the corrected function in the EXACT format shown.
+7. If anything is wrong, provide the corrected function in the EXACT format shown above,
+   followed by the updated CUSTOM_PYTHON_AST_RULES array comment with the function name.
 
 8. One-line summary: VALID or NEEDS FIX, and why.`;
+}
+
+// ══════════════════════════════════════════════════════
+//  JAVA AST VERIFICATION PROMPT
+// ══════════════════════════════════════════════════════
+function generateJavaAstVerificationPrompt() {
+  const category  = document.getElementById('category').value        || '(not set)';
+  const ruleName  = document.getElementById('ruleName').value.trim() || '(not set)';
+  const message   = document.getElementById('message').value.trim()  || '';
+  const hint      = document.getElementById('hint').value.trim()     || '';
+  const severity  = document.querySelector('.sev-btn.selected')?.dataset.sev || 'warning';
+  const nodeTypes = document.getElementById('astNodeType').value     || '(not set)';
+  const checkType = document.getElementById('astCheck').value        || '(not set)';
+  const threshold = document.getElementById('astThreshold')?.value.trim();
+  const callee    = document.getElementById('astCallee')?.value.trim();
+
+  const checkDescriptions = {
+    'line-count':      `Flag if method/class is longer than ${threshold} lines`,
+    'method-count':    `Flag if class has more than ${threshold} methods`,
+    'param-count':     `Flag if method/constructor has more than ${threshold} parameters`,
+    'empty-body':      'Flag if body has zero namedChildren (empty catch, empty method)',
+    'field-public':    'Flag if field has public modifier but not final (breaks encapsulation)',
+    'method-call':     `Flag if method_invocation name matches "${callee}"`,
+    'missing-javadoc': 'Flag if public method has no /** Javadoc */ block comment above it',
+    'custom-prop':     'Custom property check — user defined',
+  };
+  const sevMap = {
+    error:   'vscode.DiagnosticSeverity.Error',
+    warning: 'vscode.DiagnosticSeverity.Warning',
+    info:    'vscode.DiagnosticSeverity.Information',
+    hint:    'vscode.DiagnosticSeverity.Hint',
+  };
+
+  // Build constName the same way ast-java.js does — kebab-case to PascalCase with 'check' prefix
+  const constName = 'check' + ruleName
+    .split('-')
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join('');
+
+  return `You are verifying a Java AST rule for ScaleArch — a VS Code static analysis extension.
+Java AST rules use tree-sitter-java (native Node.js binding — no JDK required) and receive
+one tree-sitter node at a time. They use completely different property names than Python or JS/TS rules.
+
+═══════════════════════════════════════
+RULE DETAILS
+═══════════════════════════════════════
+Category    : ${category}
+Rule ID     : ${category}/${ruleName}
+Const name  : ${constName}
+Severity    : ${sevMap[severity] || severity}
+Node type(s): ${nodeTypes}
+Check type  : ${checkDescriptions[checkType] || checkType}
+${threshold ? `Threshold   : ${threshold}` : ''}
+${callee    ? `Target name : ${callee}` : ''}
+
+${buildMessageHintBlock(message, hint)}
+
+═══════════════════════════════════════
+GENERATED CODE TO VERIFY
+═══════════════════════════════════════
+${state.generated || '(generate the rule first, then click Verify with AI)'}
+
+${buildRegexVsAstBlock('ast')}
+
+═══════════════════════════════════════
+JAVA AST RULE STRUCTURE — DO NOT CHANGE THIS FORMAT
+═══════════════════════════════════════
+// Step 1: declare the named const ABOVE the CUSTOM_JAVA_AST_RULES array
+const checkRuleName: JavaRuleCheck = (node, _cfg, makeDiag) => {
+  if (node.type !== 'method_declaration') return null;
+
+  const params = node.childForFieldName('parameters');
+  if (!params) return null;
+  const paramCount = params.namedChildren.filter(
+    (c: JavaNode) => c.type === 'formal_parameter'
+  ).length;
+  if (paramCount <= 4) return null;
+
+  return makeDiag(
+    node,
+    'Method has too many parameters — consider a parameter object',
+    vscode.DiagnosticSeverity.Warning,
+    'category/rule-name',
+    'Methods with 5+ parameters are hard to call correctly. Use a builder or parameter object.'
+  );
+};
+
+// Step 2: add the const NAME to the array (not the function body — just the name)
+export const CUSTOM_JAVA_AST_RULES: JavaRuleCheck[] = [
+  checkRuleName,   // ← add this
+];
+
+═══════════════════════════════════════
+EXAMPLES OF CORRECT JAVA AST RULES (for reference)
+═══════════════════════════════════════
+// Example 1 — empty catch block
+const checkEmptyCatch: JavaRuleCheck = (node, _cfg, makeDiag) => {
+  if (node.type !== 'catch_clause') return null;
+  const body = node.childForFieldName('body');
+  if (!body) return null;
+  if (body.namedChildren.length > 0) return null;
+  return makeDiag(
+    node,
+    'Empty catch block — exception is being silently swallowed',
+    vscode.DiagnosticSeverity.Error,
+    'java/ast-empty-catch',
+    'Silent catch blocks hide bugs and make debugging very difficult. At minimum log the exception: catch (Exception e) { logger.error("...", e); }'
+  );
+};
+
+// Example 2 — System.exit() outside main
+const checkSystemExit: JavaRuleCheck = (node, _cfg, makeDiag) => {
+  if (node.type !== 'method_invocation') return null;
+  const obj    = node.childForFieldName('object')?.text;
+  const method = node.childForFieldName('name')?.text;
+  if (obj !== 'System' || method !== 'exit') return null;
+  // Walk up to check if we are inside main()
+  let current = node.parent;
+  while (current) {
+    if (current.type === 'method_declaration') {
+      if (current.childForFieldName('name')?.text === 'main') return null;
+      break;
+    }
+    current = current.parent;
+  }
+  return makeDiag(
+    node,
+    'System.exit() terminates the entire JVM — avoid in library or service code',
+    vscode.DiagnosticSeverity.Error,
+    'java/ast-system-exit',
+    'System.exit() immediately shuts down the JVM including all threads. Throw an exception or propagate the error to the caller instead.'
+  );
+};
+
+// Example 3 — public non-final field
+const checkPublicField: JavaRuleCheck = (node, _cfg, makeDiag) => {
+  if (node.type !== 'field_declaration') return null;
+  const modifiers = node.namedChildren.find((c: JavaNode) => c.type === 'modifiers');
+  if (!modifiers) return null;
+  if (!modifiers.text.includes('public')) return null;
+  if (modifiers.text.includes('final')) return null;  // constants are ok
+  const declarator = node.namedChildren.find((c: JavaNode) => c.type === 'variable_declarator');
+  const name = declarator?.childForFieldName('name')?.text ?? 'unknown';
+  return makeDiag(
+    node,
+    \`Public field '\${name}' breaks encapsulation — use private + getter/setter\`,
+    vscode.DiagnosticSeverity.Warning,
+    'java/ast-public-field',
+    'Public mutable fields allow any code to modify internal state directly. Declare the field private and expose it via getters/setters.'
+  );
+};
+
+═══════════════════════════════════════
+KEY tree-sitter DIFFERENCES vs Python / JS/TS — Claude must check ALL of these
+═══════════════════════════════════════
+  ✓ node.type  (NO underscore — tree-sitter. Python uses node._type, Java does NOT)
+  ✓ node.startPosition.row  (0-based — same as VS Code Range, no +1/-1 adjustment needed)
+  ✓ node.endPosition.row    (0-based)
+  ✓ node.childForFieldName('name')?.text  (NOT node.name — that is Python. NOT node.id?.name — that is JS/TS)
+  ✓ node.namedChildren  (excludes syntax tokens { } ; ( ) — NOT node.body.body which is JS/TS)
+  ✓ node.parent  (walk up tree — useful to check what method/class a node is inside)
+  ✓ makeDiag(node, message, severity, code, hint)  — hint is always the 5th argument
+  ✓ Rule is a NAMED CONST assigned to JavaRuleCheck type — not a plain function or arrow function
+
+COMMON JAVA TREE-SITTER NODE PROPERTIES:
+  method_declaration:
+    node.childForFieldName('name')?.text               → method name string
+    node.childForFieldName('parameters')?.namedChildren → list of parameter nodes
+    filter by c.type === 'formal_parameter'            → count params
+    node.childForFieldName('body')                     → method body block node
+    node.namedChildren.find(c => c.type === 'modifiers')?.text → 'public static final' etc.
+    node.endPosition.row - node.startPosition.row      → line count (0-based diff)
+
+  class_declaration:
+    node.childForFieldName('name')?.text
+    node.childForFieldName('body')?.namedChildren      → all class members
+    filter by c.type === 'method_declaration'          → methods only
+    filter by c.type === 'field_declaration'           → fields only
+
+  constructor_declaration:
+    node.childForFieldName('name')?.text               → class name (same as constructor)
+    node.childForFieldName('parameters')?.namedChildren
+
+  catch_clause:
+    node.childForFieldName('body')?.namedChildren.length === 0  → empty catch body
+
+  field_declaration:
+    node.namedChildren.find(c => c.type === 'modifiers')?.text  → modifier string
+    modifiers.text.includes('public')  → visibility check
+    modifiers.text.includes('final')   → constant check (skip these)
+    node.namedChildren.find(c => c.type === 'variable_declarator')
+      ?.childForFieldName('name')?.text → field name
+
+  method_invocation:
+    node.childForFieldName('object')?.text → object name e.g. 'System', 'Thread'
+    node.childForFieldName('name')?.text   → method name e.g. 'exit', 'sleep'
+
+  binary_expression:
+    node.namedChildren.some(c => c.type === 'string_literal') → has string operand
+    node.text.includes(' == ')  → equality operator (check via text for operator)
+
+═══════════════════════════════════════
+WHAT I NEED FROM YOU
+═══════════════════════════════════════
+1. NODE TYPE: Is "${nodeTypes}" the correct tree-sitter node type for: ${checkDescriptions[checkType] || checkType}?
+   Remember: tree-sitter Java uses snake_case (method_declaration NOT MethodDeclaration).
+
+2. PROPERTIES: Are ALL tree-sitter properties correct? Check for these common mistakes:
+     ✗ node._type         → should be  node.type  (no underscore in tree-sitter)
+     ✗ node.name          → should be  node.childForFieldName('name')?.text
+     ✗ node.id?.name      → should be  node.childForFieldName('name')?.text
+     ✗ node.body.body     → should be  node.childForFieldName('body')?.namedChildren
+     ✗ node.params        → should be  node.childForFieldName('parameters')?.namedChildren
+     ✗ node.loc.start.line → should be  node.startPosition.row
+
+3. EXAMPLES: Give 2 Java code examples that SHOULD trigger this rule,
+   and 1 example that should NOT (false positive check).
+
+4. MESSAGE & HINT: Are they clear and actionable for a Java developer?
+   If weak or missing, suggest better versions following the quality checklists above.
+
+5. HINT IN makeDiag: Is hint passed as the 5th argument?
+   Signature: makeDiag(node, message, severity, code, hint)
+   If hint is missing from the call, flag it as an error.
+
+6. NAMED CONST FORMAT: Is the rule declared as:
+   const ${constName}: JavaRuleCheck = (node, _cfg, makeDiag) => { ... };
+   NOT a plain function, NOT an exported function, NOT an inline arrow without a name.
+
+7. REGISTRATION: Does the generated code include the const name being added to CUSTOM_JAVA_AST_RULES?
+   Should show:  export const CUSTOM_JAVA_AST_RULES: JavaRuleCheck[] = [ ${constName}, ];
+
+8. AST vs REGEX: Could this be a simpler Java regex rule instead?
+   Example: if the rule just detects System.out.println by text, a regex rule with
+   languages: ['java'] would be simpler and faster.
+
+9. If anything is wrong, provide:
+   a) The corrected const declaration in the exact format shown above.
+   b) The updated CUSTOM_JAVA_AST_RULES array with the const name added.
+
+10. One-line summary: VALID or NEEDS FIX, and why.`;
 }

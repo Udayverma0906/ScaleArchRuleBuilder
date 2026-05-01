@@ -1,6 +1,7 @@
 [
   {
     "id": "FunctionDeclaration",
+    "language": "js-ts",
     "desc": "A named function defined with the function keyword at the statement level.",
     "example": "function greet(name) {\n  return \"Hello \" + name;\n}",
     "props": [
@@ -9,11 +10,11 @@
       "node.body (block)",
       "node.async",
       "node.loc (line numbers)"
-    ],
-    "language": "js-ts"
+    ]
   },
   {
     "id": "ArrowFunctionExpression",
+    "language": "js-ts",
     "desc": "An arrow function assigned to a variable or passed as a callback. Has no own \"this\".",
     "example": "const greet = (name) => {\n  return \"Hello \" + name;\n};\n\nconst add = (a, b) => a + b;",
     "props": [
@@ -21,11 +22,11 @@
       "node.body",
       "node.async",
       "node.expression (true if body is not a block)"
-    ],
-    "language": "js-ts"
+    ]
   },
   {
     "id": "FunctionExpression",
+    "language": "js-ts",
     "desc": "A function assigned to a variable or used as a value (not a declaration).",
     "example": "const greet = function(name) {\n  return \"Hello \" + name;\n};",
     "props": [
@@ -33,22 +34,22 @@
       "node.params",
       "node.body",
       "node.async"
-    ],
-    "language": "js-ts"
+    ]
   },
   {
     "id": "ClassDeclaration",
+    "language": "js-ts",
     "desc": "A class defined at the statement level with a name.",
     "example": "class OrderService {\n  constructor(repo) {\n    this.repo = repo;\n  }\n  getOrder(id) { ... }\n}",
     "props": [
       "node.id.name (class name)",
       "node.body.body (method list)",
       "node.superClass"
-    ],
-    "language": "js-ts"
+    ]
   },
   {
     "id": "MethodDefinition",
+    "language": "js-ts",
     "desc": "A method inside a class body \u2014 including constructor, getters, setters, and regular methods.",
     "example": "class Foo {\n  myMethod() { ... }  // \u2190 MethodDefinition\n  get value() { ... } // \u2190 MethodDefinition (kind: \"get\")\n}",
     "props": [
@@ -56,154 +57,153 @@
       "node.kind (\"constructor\"|\"method\"|\"get\"|\"set\")",
       "node.static",
       "node.value (the function)"
-    ],
-    "language": "js-ts"
+    ]
   },
   {
     "id": "CatchClause",
+    "language": "js-ts",
     "desc": "The catch block of a try/catch statement. Useful for detecting empty or silent catches.",
     "example": "try {\n  riskyOp();\n} catch (e) {     // \u2190 CatchClause\n  // empty \u2014 bad!\n}",
     "props": [
       "node.param (the error variable, e.g. e)",
       "node.body.body (statements inside catch)"
-    ],
-    "language": "js-ts"
+    ]
   },
   {
     "id": "CallExpression",
+    "language": "js-ts",
     "desc": "Any function or method call \u2014 e.g. fetch(), console.log(), obj.method(). Most common for banning specific API calls.",
     "example": "fetch(\"/api/users\")       // \u2190 CallExpression\nconsole.log(\"debug\")      // \u2190 CallExpression\nobj.dangerousMethod()     // \u2190 CallExpression",
     "props": [
       "node.callee.name (fn name, e.g. \"fetch\")",
       "node.callee.property.name (method name)",
       "node.arguments (arg list)"
-    ],
-    "language": "js-ts"
+    ]
   },
   {
     "id": "NewExpression",
+    "language": "js-ts",
     "desc": "A constructor call using the new keyword.",
     "example": "const repo = new OrderRepository();\nconst d    = new Date();",
     "props": [
       "node.callee.name (class name)",
       "node.arguments"
-    ],
-    "language": "js-ts"
+    ]
   },
   {
     "id": "Literal",
-    "desc": "Any literal value in the source \u2014 string, number, boolean, null, or regex. Good for detecting magic numbers or repeated strings.",
+    "language": "js-ts",
+    "desc": "Any literal value in the source \u2014 string, number, boolean, null, or regex.",
     "example": "const x = 42;           // Literal (number)\nconst s = \"hello\";      // Literal (string)\nconst b = true;         // Literal (boolean)",
     "props": [
       "node.value (the actual value)",
       "node.raw (the raw source text)",
       "typeof node.value for type check"
-    ],
-    "language": "js-ts"
+    ]
   },
   {
     "id": "BlockStatement",
+    "language": "js-ts",
     "desc": "Any block of code wrapped in curly braces \u2014 function bodies, if/else bodies, loop bodies.",
     "example": "if (condition) {\n  doThing(); // \u2190 inside a BlockStatement\n}",
     "props": [
       "node.body (array of statements inside)",
       "node.body.length (count statements)"
-    ],
-    "language": "js-ts"
+    ]
   },
   {
     "id": "IfStatement",
+    "language": "js-ts",
     "desc": "An if/else conditional statement. Useful for complexity checks.",
     "example": "if (a > 0) {\n  ...\n} else if (b > 0) {\n  ...\n}",
     "props": [
       "node.test (the condition)",
       "node.consequent (if body)",
       "node.alternate (else body, or null)"
-    ],
-    "language": "js-ts"
+    ]
   },
   {
     "id": "ImportDeclaration",
+    "language": "js-ts",
     "desc": "An ES module import statement. Use to count imports or detect banned dependencies.",
     "example": "import React from \"react\";\nimport { db } from \"@company/db\";",
     "props": [
       "node.source.value (the module path, e.g. \"@company/db\")",
       "node.specifiers (what is imported)"
-    ],
-    "language": "js-ts"
+    ]
   },
   {
     "id": "VariableDeclaration",
+    "language": "js-ts",
     "desc": "A variable declaration using let, const, or var.",
     "example": "const x = 10;     // VariableDeclaration (kind: \"const\")\nlet name = \"foo\"; // VariableDeclaration (kind: \"let\")",
     "props": [
       "node.kind (\"const\"|\"let\"|\"var\")",
       "node.declarations (array of declarators)"
-    ],
-    "language": "js-ts"
+    ]
   },
   {
     "id": "ReturnStatement",
-    "desc": "A return statement inside a function. Useful for detecting missing returns, early exits, or return values of a specific type.",
-    "example": "function getUser(id) {\n  if (!id) return null;   // \u2190 ReturnStatement\n  return db.find(id);     // \u2190 ReturnStatement\n}",
+    "language": "js-ts",
+    "desc": "A return statement inside a function.",
+    "example": "function getUser(id) {\n  if (!id) return null;\n  return db.find(id);\n}",
     "props": [
       "node.argument (the returned value, or null for bare return)",
       "node.loc (line number of the return)"
-    ],
-    "language": "js-ts"
+    ]
   },
   {
     "id": "TryStatement",
-    "desc": "A try/catch/finally block. Use to detect async functions missing error handling, or try blocks with empty catch clauses.",
+    "language": "js-ts",
+    "desc": "A try/catch/finally block.",
     "example": "try {\n  riskyOp();\n} catch (e) {\n  logger.error(e);\n} finally {\n  cleanup();\n}",
     "props": [
       "node.block (the try body)",
-      "node.handler (the CatchClause, or null if no catch)",
+      "node.handler (the CatchClause, or null)",
       "node.finalizer (the finally block, or null)"
-    ],
-    "language": "js-ts"
+    ]
   },
   {
     "id": "ThrowStatement",
-    "desc": "A throw statement. Useful for detecting where errors are thrown, or ensuring errors are proper Error instances rather than bare strings.",
-    "example": "throw new Error('Something failed');  // \u2190 ThrowStatement\nthrow 'bad string error';             // \u2190 ThrowStatement (anti-pattern)",
+    "language": "js-ts",
+    "desc": "A throw statement. Ensure errors are proper Error instances rather than bare strings.",
+    "example": "throw new Error('Something failed');\nthrow 'bad string error'; // \u2190 anti-pattern",
     "props": [
-      "node.argument (the thrown value \u2014 check if it's a NewExpression with callee.name === 'Error')"
-    ],
-    "language": "js-ts"
+      "node.argument (check if NewExpression with callee.name === 'Error')"
+    ]
   },
   {
     "id": "AssignmentExpression",
-    "desc": "An assignment operation: =, +=, -=, etc. Different from VariableDeclaration \u2014 this is reassigning an existing variable.",
-    "example": "x = 10;          // \u2190 AssignmentExpression (operator: '=')\nresult += item;  // \u2190 AssignmentExpression (operator: '+=')\nobj.key = val;   // \u2190 AssignmentExpression",
+    "language": "js-ts",
+    "desc": "An assignment operation: =, +=, -=, etc.",
+    "example": "x = 10;\nresult += item;\nobj.key = val;",
     "props": [
-      "node.operator ('=' | '+=' | '-=' | '*=' etc.)",
+      "node.operator ('=' | '+=' | '-=' etc.)",
       "node.left (what is being assigned to)",
       "node.right (the value being assigned)"
-    ],
-    "language": "js-ts"
+    ]
   },
   {
     "id": "MemberExpression",
-    "desc": "Property access on an object: obj.property or obj[key]. Useful for banning specific property accesses like process.env, console.log, or dangerous APIs.",
-    "example": "obj.property        // \u2190 MemberExpression\narray[0]            // \u2190 MemberExpression (computed)\nprocess.env.SECRET  // \u2190 nested MemberExpressions",
+    "language": "js-ts",
+    "desc": "Property access on an object: obj.property or obj[key].",
+    "example": "obj.property\narray[0]\nprocess.env.SECRET",
     "props": [
       "node.object (the object being accessed)",
-      "node.property (the property \u2014 use node.property.name for dot access)",
+      "node.property (use node.property.name for dot access)",
       "node.computed (true if obj[key] syntax)"
-    ],
-    "language": "js-ts"
+    ]
   },
   {
     "id": "TemplateLiteral",
-    "desc": "A template string using backticks. Use to detect SQL queries built with template literals (injection risk), or dynamic strings that should be static.",
-    "example": "const msg = `Hello ${name}`;              // \u2190 TemplateLiteral\nconst sql = `SELECT * FROM ${table}`;     // \u2190 injection risk",
+    "language": "js-ts",
+    "desc": "A template string using backticks. Detect SQL queries built with template literals.",
+    "example": "const msg = `Hello ${name}`;\nconst sql = `SELECT * FROM ${table}`; // \u2190 injection risk",
     "props": [
-      "node.expressions (array of interpolated ${...} values)",
-      "node.quasis (the static string parts between expressions)",
-      "node.expressions.length (0 = no interpolation \u2014 pure static string)"
-    ],
-    "language": "js-ts"
+      "node.expressions (array of ${...} values)",
+      "node.quasis (static string parts)",
+      "node.expressions.length (0 = no interpolation)"
+    ]
   },
   {
     "id": "FunctionDef",
@@ -248,10 +248,10 @@
   {
     "id": "ExceptHandler",
     "language": "python",
-    "desc": "An except block in a try/except statement. Use to detect bare except, broad Exception catch, or empty handlers.",
-    "example": "try:\n    risky_op()\nexcept ValueError as e:   # \u2190 ExceptHandler\n    logger.error(e)\nexcept:                    # \u2190 bare ExceptHandler (type is null)",
+    "desc": "An except block. Detect bare except, broad Exception catch, or empty handlers.",
+    "example": "try:\n    risky_op()\nexcept ValueError as e:\n    logger.error(e)\nexcept:  # \u2190 bare (type is null)",
     "props": [
-      "node.type (the exception class node, or null for bare except:)",
+      "node.type (exception class node, or null for bare except:)",
       "node.name (the 'as e' variable name, or null)",
       "node.body (list of statements inside the handler)",
       "node.lineno"
@@ -260,20 +260,32 @@
   {
     "id": "Assign",
     "language": "python",
-    "desc": "A variable assignment: x = value. Different from type-annotated assignments (AnnAssign). Used to count self.x = ... in __init__.",
-    "example": "x = 10                    # \u2190 Assign\nself.name = data['name']  # \u2190 Assign (target is Attribute)\nresult = compute()        # \u2190 Assign",
+    "desc": "A variable assignment: x = value. Used to count self.x = ... in __init__.",
+    "example": "x = 10\nself.name = data['name']\nresult = compute()",
     "props": [
-      "node.targets (list of target nodes \u2014 usually one)",
+      "node.targets (list of target nodes)",
       "node.value (the right-hand side node)",
       "node.lineno",
-      "target._type === 'Attribute' and target.value.id === 'self' to detect self.x ="
+      "target._type === 'Attribute' && target.value.id === 'self' to detect self.x ="
+    ]
+  },
+  {
+    "id": "AnnAssign",
+    "language": "python",
+    "desc": "Type-annotated assignment (x: int = 5). Useful for enforcing type hints on class fields.",
+    "example": "x: int = 10\nname: str = 'Uday'",
+    "props": [
+      "node.target.id (variable name, e.g. 'x')",
+      "node.annotation.id (type name, e.g. 'int')",
+      "node.value (assigned value node)",
+      "node.lineno"
     ]
   },
   {
     "id": "Return",
     "language": "python",
-    "desc": "A return statement. Use to check what a function returns, or detect missing returns.",
-    "example": "def get_value():\n    return 42        # \u2190 Return (argument is Constant)\n\ndef early_exit(x):\n    if not x:\n        return       # \u2190 Return (argument is null \u2014 bare return)",
+    "desc": "A return statement.",
+    "example": "def get_value():\n    return 42\n\ndef early_exit(x):\n    if not x:\n        return  # \u2190 bare return",
     "props": [
       "node.value (the returned value node, or null for bare return)",
       "node.lineno"
@@ -282,8 +294,8 @@
   {
     "id": "Import",
     "language": "python",
-    "desc": "A Python import statement. Use to detect banned imports or count total imports.",
-    "example": "import os           # \u2190 Import\nimport sys, json    # \u2190 Import (multiple names)",
+    "desc": "A Python import statement. Detect banned imports or count total imports.",
+    "example": "import os\nimport sys, json",
     "props": [
       "node.names (list of alias nodes)",
       "node.names[0].name (the module name string)",
@@ -294,242 +306,374 @@
   {
     "id": "ImportFrom",
     "language": "python",
-    "desc": "A from X import Y statement. Use to detect specific imports from banned modules.",
-    "example": "from os import path         # \u2190 ImportFrom\nfrom typing import Optional # \u2190 ImportFrom",
+    "desc": "A from X import Y statement.",
+    "example": "from os import path\nfrom typing import Optional",
     "props": [
       "node.module (the module name string, e.g. 'os')",
-      "node.names (list of alias nodes for what is imported)",
+      "node.names (list of alias nodes)",
       "node.lineno"
     ]
   },
   {
     "id": "Call",
     "language": "python",
-    "desc": "Any function or method call. Use to detect calls to banned functions like eval(), exec(), or print().",
-    "example": "eval(code)               # \u2190 Call (func.id = 'eval')\nprint('debug')           # \u2190 Call (func.id = 'print')\nobj.method(arg)          # \u2190 Call (func is Attribute)",
+    "desc": "Any function or method call. Detect calls to eval(), exec(), or print().",
+    "example": "eval(code)\nprint('debug')\nobj.method(arg)",
     "props": [
       "node.func._type === 'Name' \u2192 node.func.id (bare function name)",
       "node.func._type === 'Attribute' \u2192 node.func.attr (method name)",
       "node.args (list of positional argument nodes)",
-      "node.keywords (list of keyword argument nodes)",
       "node.lineno"
     ]
   },
   {
-  "id": "AnnAssign",
-  "language": "python",
-  "desc": "Type-annotated assignment (x: int = 5). Useful for enforcing type hints.",
-  "example": "x: int = 10\nname: str = 'Uday'",
-  "props": [
-    "node.target.id (variable name string, e.g. 'x')",
-    "node.annotation.id (type name string, e.g. 'int')",
-    "node.value (assigned value node, e.g. Constant)",
-    "node.lineno"
-  ]
-},
-{
-  "id": "If",
-  "language": "python",
-  "desc": "An if statement. Use to detect deep nesting or missing else blocks.",
-  "example": "if x > 10:\n    print('big')\nelse:\n    print('small')",
-  "props": [
-    "node.test._type === 'Compare' (condition expression)",
-    "node.body (list of statements inside if)",
-    "node.orelse (else/elif block, empty if no else)",
-    "node.lineno"
-  ]
-},
-{
-  "id": "For",
-  "language": "python",
-  "desc": "A for loop. Useful for detecting nested loops or iteration patterns.",
-  "example": "for i in range(10):\n    print(i)",
-  "props": [
-    "node.target.id (loop variable name, e.g. 'i')",
-    "node.iter._type === 'Call' (e.g. range(10))",
-    "node.body (loop body statements)",
-    "node.lineno"
-  ]
-},
-{
-  "id": "While",
-  "language": "python",
-  "desc": "A while loop. Useful for detecting infinite loops.",
-  "example": "while True:\n    do_something()",
-  "props": [
-    "node.test.value === true (detect while True)",
-    "node.body (loop body)",
-    "node.lineno"
-  ]
-},
-{
-  "id": "Try",
-  "language": "python",
-  "desc": "A try block. Use to check error handling quality.",
-  "example": "try:\n    risky()\nexcept Exception:\n    pass",
-  "props": [
-    "node.handlers.length (number of except blocks)",
-    "node.handlers[0].type.id (e.g. 'Exception')",
-    "node.finalbody (finally block statements)",
-    "node.lineno"
-  ]
-},
-{
-  "id": "With",
-  "language": "python",
-  "desc": "A with statement. Useful for detecting proper resource handling.",
-  "example": "with open('file.txt') as f:\n    data = f.read()",
-  "props": [
-    "node.items[0].context_expr.func.id (e.g. 'open')",
-    "node.items[0].optional_vars.id (alias variable, e.g. 'f')",
-    "node.body (with block statements)",
-    "node.lineno"
-  ]
-},
-{
-  "id": "Attribute",
-  "language": "python",
-  "desc": "Attribute access (obj.prop). Useful for detecting self usage or chained calls.",
-  "example": "self.name\nuser.profile.email",
-  "props": [
-    "node.value.id === 'self' (detect self usage)",
-    "node.attr (property name string, e.g. 'name')",
-    "node.lineno"
-  ]
-},
-{
-  "id": "Name",
-  "language": "python",
-  "desc": "A variable reference. Useful for detecting specific variable usage.",
-  "example": "x\nuser_id",
-  "props": [
-    "node.id (variable name string, e.g. 'x')",
-    "node.ctx._type === 'Load' (read usage)",
-    "node.lineno"
-  ]
-},
-{
-  "id": "Constant",
-  "language": "python",
-  "desc": "A constant value (string, number, etc.).",
-  "example": "42\n'hello'\nTrue",
-  "props": [
-    "node.value (actual value, e.g. 42 or 'hello')",
-    "typeof node.value === 'string' (detect strings)",
-    "node.lineno"
-  ]
-},
-{
-  "id": "Compare",
-  "language": "python",
-  "desc": "A comparison expression (x > 5, a == b).",
-  "example": "x > 10\nuser == admin",
-  "props": [
-    "node.left.id (left variable, e.g. 'x')",
-    "node.ops[0]._type (e.g. 'Gt', 'Eq')",
-    "node.comparators[0].value (right side value)",
-    "node.lineno"
-  ]
-},
-{
-  "id": "BoolOp",
-  "language": "python",
-  "desc": "Boolean operations (and/or).",
-  "example": "x > 5 and y < 10",
-  "props": [
-    "node.op._type === 'And' or 'Or'",
-    "node.values.length (number of conditions)",
-    "node.lineno"
-  ]
-},
-{
-  "id": "BinOp",
-  "language": "python",
-  "desc": "Binary operations (+, -, *, /).",
-  "example": "a + b\nx * y",
-  "props": [
-    "node.left.id (left operand)",
-    "node.op._type (e.g. 'Add', 'Mult')",
-    "node.right.id (right operand)",
-    "node.lineno"
-  ]
-},
-{
-  "id": "Lambda",
-  "language": "python",
-  "desc": "Lambda (anonymous function).",
-  "example": "lambda x: x + 1",
-  "props": [
-    "node.args.args[0].arg (parameter name, e.g. 'x')",
-    "node.body._type (expression type)",
-    "node.lineno"
-  ]
-},
-{
-  "id": "ListComp",
-  "language": "python",
-  "desc": "List comprehension. Useful for detecting complexity.",
-  "example": "[x for x in range(10)]",
-  "props": [
-    "node.generators[0].target.id (loop variable, e.g. 'x')",
-    "node.generators[0].iter.func.id (e.g. 'range')",
-    "node.elt (output expression)",
-    "node.lineno"
-  ]
-},
-{
-  "id": "Dict",
-  "language": "python",
-  "desc": "Dictionary literal.",
-  "example": "{'name': 'Uday'}",
-  "props": [
-    "node.keys[0].value (key string, e.g. 'name')",
-    "node.values[0].value (value, e.g. 'Uday')",
-    "node.lineno"
-  ]
-},
-{
-  "id": "List",
-  "language": "python",
-  "desc": "List literal.",
-  "example": "[1, 2, 3]",
-  "props": [
-    "node.elts.length (number of elements)",
-    "node.elts[0].value (first value)",
-    "node.lineno"
-  ]
-},
-{
-  "id": "Tuple",
-  "language": "python",
-  "desc": "Tuple literal.",
-  "example": "(1, 2, 3)",
-  "props": [
-    "node.elts.length (number of elements)",
-    "node.elts[0].value",
-    "node.lineno"
-  ]
-},
-{
-  "id": "Raise",
-  "language": "python",
-  "desc": "Raise statement. Useful for enforcing error handling patterns.",
-  "example": "raise ValueError('Invalid input')",
-  "props": [
-    "node.exc.func.id (exception type, e.g. 'ValueError')",
-    "node.exc.args[0].value (error message string)",
-    "node.lineno"
-  ]
-},
-{
-  "id": "Assert",
-  "language": "python",
-  "desc": "Assert statement. Often used in debugging.",
-  "example": "assert x > 0",
-  "props": [
-    "node.test._type === 'Compare'",
-    "node.msg (optional message node)",
-    "node.lineno"
-  ]
-}
+    "id": "If",
+    "language": "python",
+    "desc": "An if statement. Detect deep nesting or missing else blocks.",
+    "example": "if x > 10:\n    print('big')\nelse:\n    print('small')",
+    "props": [
+      "node.test._type (condition type, e.g. 'Compare')",
+      "node.body (list of statements inside if)",
+      "node.orelse (else/elif block, empty list if no else)",
+      "node.lineno"
+    ]
+  },
+  {
+    "id": "For",
+    "language": "python",
+    "desc": "A for loop. Detect nested loops or expensive operations inside loops.",
+    "example": "for i in range(10):\n    print(i)",
+    "props": [
+      "node.target.id (loop variable name, e.g. 'i')",
+      "node.iter._type (iterator type)",
+      "node.body (loop body statements)",
+      "node.lineno"
+    ]
+  },
+  {
+    "id": "While",
+    "language": "python",
+    "desc": "A while loop. Detect infinite loops or blocking patterns.",
+    "example": "while True:\n    do_something()",
+    "props": [
+      "node.test._type === 'Constant' && node.test.value === true (detect while True)",
+      "node.body (loop body)",
+      "node.lineno"
+    ]
+  },
+  {
+    "id": "Try",
+    "language": "python",
+    "desc": "A try block. Check error handling quality.",
+    "example": "try:\n    risky()\nexcept Exception:\n    pass",
+    "props": [
+      "node.handlers (list of ExceptHandler nodes)",
+      "node.handlers.length (number of except blocks)",
+      "node.finalbody (finally block statements)",
+      "node.lineno"
+    ]
+  },
+  {
+    "id": "With",
+    "language": "python",
+    "desc": "A with statement. Detect proper resource handling.",
+    "example": "with open('file.txt') as f:\n    data = f.read()",
+    "props": [
+      "node.items[0].context_expr.func.id (e.g. 'open')",
+      "node.items[0].optional_vars.id (alias variable, e.g. 'f')",
+      "node.body (with block statements)",
+      "node.lineno"
+    ]
+  },
+  {
+    "id": "Raise",
+    "language": "python",
+    "desc": "Raise statement. Enforce error handling patterns.",
+    "example": "raise ValueError('Invalid input')",
+    "props": [
+      "node.exc._type (exception node type)",
+      "node.exc.func.id (exception class name, e.g. 'ValueError')",
+      "node.exc.args[0].value (error message string)",
+      "node.lineno"
+    ]
+  },
+  {
+    "id": "Assert",
+    "language": "python",
+    "desc": "Assert statement. Stripped by python -O \u2014 should not be used for production validation.",
+    "example": "assert x > 0, 'x must be positive'",
+    "props": [
+      "node.test._type (condition type)",
+      "node.msg (optional message node, or null)",
+      "node.lineno"
+    ]
+  },
+  {
+    "id": "BinOp",
+    "language": "python",
+    "desc": "Binary operations (+, -, *, /). Detect string concatenation with +.",
+    "example": "a + b\n'Hello ' + name",
+    "props": [
+      "node.left._type (left operand type)",
+      "node.op._type (operator, e.g. 'Add', 'Mult', 'Sub')",
+      "node.right._type (right operand type)",
+      "node.lineno"
+    ]
+  },
+  {
+    "id": "BoolOp",
+    "language": "python",
+    "desc": "Boolean operations (and/or). Detect overly complex conditions.",
+    "example": "x > 5 and y < 10 or z == 0",
+    "props": [
+      "node.op._type ('And' or 'Or')",
+      "node.values.length (number of conditions joined)",
+      "node.lineno"
+    ]
+  },
+  {
+    "id": "Compare",
+    "language": "python",
+    "desc": "A comparison expression (x > 5, a == b). Detect identity vs equality checks.",
+    "example": "x > 10\nuser == admin\nvalue is None",
+    "props": [
+      "node.left._type (left operand type)",
+      "node.ops[0]._type (operator, e.g. 'Gt', 'Eq', 'Is', 'IsNot')",
+      "node.comparators[0] (right side node)",
+      "node.lineno"
+    ]
+  },
+  {
+    "id": "Lambda",
+    "language": "python",
+    "desc": "Lambda (anonymous function). Detect overly complex lambdas.",
+    "example": "lambda x: x + 1\nsorted(items, key=lambda x: x.name)",
+    "props": [
+      "node.args.args (list of parameter nodes)",
+      "node.args.args.length (parameter count)",
+      "node.body._type (body expression type)",
+      "node.lineno"
+    ]
+  },
+  {
+    "id": "ListComp",
+    "language": "python",
+    "desc": "List comprehension. Detect nested comprehensions or complex filtering.",
+    "example": "[x * 2 for x in range(10) if x > 5]",
+    "props": [
+      "node.generators.length (>1 means nested comprehension)",
+      "node.generators[0].target.id (loop variable)",
+      "node.generators[0].ifs.length (number of if filters)",
+      "node.elt._type (output expression type)",
+      "node.lineno"
+    ]
+  },
+  {
+    "id": "Dict",
+    "language": "python",
+    "desc": "Dictionary literal. Detect large inline dicts that should be constants.",
+    "example": "{'name': 'Uday', 'role': 'dev'}",
+    "props": [
+      "node.keys.length (number of key-value pairs)",
+      "node.keys[0].value (first key string)",
+      "node.values[0] (first value node)",
+      "node.lineno"
+    ]
+  },
+  {
+    "id": "Attribute",
+    "language": "python",
+    "desc": "Attribute access (obj.prop). Detect self usage or chained method calls.",
+    "example": "self.name\nuser.profile.email",
+    "props": [
+      "node.value._type === 'Name' && node.value.id === 'self' (detect self access)",
+      "node.attr (property name string, e.g. 'name')",
+      "node.lineno"
+    ]
+  },
+  {
+    "id": "Name",
+    "language": "python",
+    "desc": "A variable reference. Detect specific variable usage or banned names.",
+    "example": "x\nuser_id\npassword",
+    "props": [
+      "node.id (variable name string)",
+      "node.ctx._type ('Load' for read, 'Store' for write, 'Del' for delete)",
+      "node.lineno"
+    ]
+  },
+  {
+    "id": "Constant",
+    "language": "python",
+    "desc": "A constant value (string, number, bool, None). Detect magic numbers or hardcoded strings.",
+    "example": "42\n'hello'\nTrue\nNone",
+    "props": [
+      "node.value (actual value)",
+      "typeof node.value === 'string' (detect strings)",
+      "typeof node.value === 'number' (detect numbers)",
+      "node.lineno"
+    ]
+  },
+  {
+    "id": "method_declaration",
+    "language": "java",
+    "desc": "A method definition inside a class. Most common node for Java rules \u2014 length, params, visibility checks.",
+    "example": "public String getUserName(int userId, boolean active) {\n    // method body\n    return db.find(userId).getName();\n}",
+    "props": [
+      "node.childForFieldName('name')?.text (method name string)",
+      "node.childForFieldName('parameters')?.namedChildren (parameter list)",
+      "node.childForFieldName('body') (method body block)",
+      "node.namedChildren.find(c => c.type === 'modifiers')?.text (e.g. 'public static')",
+      "node.endPosition.row - node.startPosition.row (line count)",
+      "node.startPosition.row (0-based line number)"
+    ]
+  },
+  {
+    "id": "class_declaration",
+    "language": "java",
+    "desc": "A class definition. Count methods, fields, check naming, or detect God Objects.",
+    "example": "public class OrderService {\n    private OrderRepository repo;\n\n    public Order getOrder(String id) { ... }\n}",
+    "props": [
+      "node.childForFieldName('name')?.text (class name string)",
+      "node.childForFieldName('body') (class body node)",
+      "filter namedChildren by type === 'method_declaration' to get methods",
+      "filter namedChildren by type === 'field_declaration' to get fields",
+      "node.startPosition.row"
+    ]
+  },
+  {
+    "id": "constructor_declaration",
+    "language": "java",
+    "desc": "A constructor definition. Detect too many parameters \u2014 sign of missing Builder pattern.",
+    "example": "public OrderService(String id, String name,\n                    String email, String phone,\n                    String address) {\n    // telescoping constructor\n}",
+    "props": [
+      "node.childForFieldName('name')?.text (class name)",
+      "node.childForFieldName('parameters')?.namedChildren (parameter nodes)",
+      "filter parameters by type === 'formal_parameter' to count params",
+      "node.startPosition.row"
+    ]
+  },
+  {
+    "id": "catch_clause",
+    "language": "java",
+    "desc": "A catch block. Detect empty catches or overly broad Exception catches.",
+    "example": "try {\n    riskyOp();\n} catch (Exception e) {   // \u2190 catch_clause\n    // empty \u2014 bad!\n}",
+    "props": [
+      "node.childForFieldName('body') (the catch block)",
+      "node.childForFieldName('body')?.namedChildren.length (0 = empty catch)",
+      "node.childForFieldName('catch_formal_parameter')?.text (e.g. 'Exception e')",
+      "node.startPosition.row"
+    ]
+  },
+  {
+    "id": "field_declaration",
+    "language": "java",
+    "desc": "A field (instance variable) declaration inside a class. Detect public fields or too many fields.",
+    "example": "public String name;           // \u2190 public field (bad)\nprivate int count;            // \u2190 private field (good)\npublic static final int MAX = 100; // \u2190 constant (ok)",
+    "props": [
+      "node.namedChildren.find(c => c.type === 'modifiers')?.text (e.g. 'public static final')",
+      "node.namedChildren.find(c => c.type === 'variable_declarator')?.childForFieldName('name')?.text",
+      "modifiers.text.includes('public') (check visibility)",
+      "modifiers.text.includes('final') (check if constant)",
+      "node.startPosition.row"
+    ]
+  },
+  {
+    "id": "interface_declaration",
+    "language": "java",
+    "desc": "An interface definition. Detect fat interfaces \u2014 Interface Segregation Principle violation.",
+    "example": "public interface UserService {\n    User findById(String id);\n    void save(User user);\n    void delete(String id);\n    List<User> findAll();\n    void update(User user);\n    void export(String format); // \u2190 too many methods\n}",
+    "props": [
+      "node.childForFieldName('name')?.text (interface name)",
+      "node.childForFieldName('body')?.namedChildren (interface members)",
+      "filter namedChildren by type === 'method_declaration' to count methods",
+      "node.startPosition.row"
+    ]
+  },
+  {
+    "id": "method_invocation",
+    "language": "java",
+    "desc": "Any method call \u2014 System.exit(), Thread.sleep(), obj.method(). Ban specific API calls.",
+    "example": "System.exit(0);          // \u2190 method_invocation\nThread.sleep(1000);      // \u2190 method_invocation\nlogger.info(\"started\"); // \u2190 method_invocation",
+    "props": [
+      "node.childForFieldName('object')?.text (e.g. 'System' or 'Thread')",
+      "node.childForFieldName('name')?.text (method name, e.g. 'exit')",
+      "node.childForFieldName('arguments')?.namedChildren (argument nodes)",
+      "node.startPosition.row"
+    ]
+  },
+  {
+    "id": "binary_expression",
+    "language": "java",
+    "desc": "A binary operation \u2014 comparison, arithmetic, logical. Detect == on strings or equality mistakes.",
+    "example": "status == \"active\"    // \u2190 string equality bug\nx + y\na && b",
+    "props": [
+      "node.namedChildren[0] (left operand)",
+      "node.namedChildren[1] (right operand)",
+      "node.namedChildren.some(c => c.type === 'string_literal') (has string operand)",
+      "node.text.includes(' == ') (check operator via text)",
+      "node.startPosition.row"
+    ]
+  },
+  {
+    "id": "try_statement",
+    "language": "java",
+    "desc": "A try/catch/finally block. Ensure exceptions are handled, not ignored.",
+    "example": "try {\n    conn.execute(sql);\n} catch (SQLException e) {\n    logger.error(e);\n} finally {\n    conn.close();\n}",
+    "props": [
+      "node.childForFieldName('body') (the try block)",
+      "node.namedChildren.filter(c => c.type === 'catch_clause') (all catch clauses)",
+      "node.namedChildren.find(c => c.type === 'finally_clause') (finally block, or null)",
+      "node.startPosition.row"
+    ]
+  },
+  {
+    "id": "local_variable_declaration",
+    "language": "java",
+    "desc": "A local variable declaration inside a method. Detect var usage or magic number assignments.",
+    "example": "int count = 0;\nString name = \"Uday\";\nvar result = getResult(); // \u2190 type inference",
+    "props": [
+      "node.childForFieldName('type')?.text (declared type, e.g. 'int', 'var')",
+      "node.childForFieldName('declarator')?.childForFieldName('name')?.text (variable name)",
+      "node.childForFieldName('declarator')?.childForFieldName('value') (assigned value)",
+      "node.startPosition.row"
+    ]
+  },
+  {
+    "id": "enhanced_for_statement",
+    "language": "java",
+    "desc": "A for-each loop. Detect expensive operations inside loops.",
+    "example": "for (String item : items) {\n    result += item;  // \u2190 string concat in loop\n}",
+    "props": [
+      "node.childForFieldName('type')?.text (element type, e.g. 'String')",
+      "node.childForFieldName('name')?.text (loop variable, e.g. 'item')",
+      "node.childForFieldName('value')?.text (collection being iterated)",
+      "node.childForFieldName('body') (loop body block)",
+      "node.startPosition.row"
+    ]
+  },
+  {
+    "id": "if_statement",
+    "language": "java",
+    "desc": "An if/else statement. Detect deep nesting or complex conditions.",
+    "example": "if (user != null) {\n    if (user.isActive()) {\n        // nested\n    }\n}",
+    "props": [
+      "node.childForFieldName('condition') (the condition expression)",
+      "node.childForFieldName('consequence') (if body block)",
+      "node.childForFieldName('alternative') (else body, or null)",
+      "node.startPosition.row"
+    ]
+  },
+  {
+    "id": "block_comment",
+    "language": "java",
+    "desc": "A block comment (/* ... */ or /** Javadoc */). Detect presence or absence of Javadoc on public methods.",
+    "example": "/**\n * Gets the user by ID.\n * @param id the user identifier\n * @return the User object\n */\npublic User getUser(String id) { ... }",
+    "props": [
+      "node.text.startsWith('/**') (is it a Javadoc comment?)",
+      "node.text (full comment text)",
+      "node.startPosition.row",
+      "check node.previousNamedSibling on method_declaration to see if Javadoc precedes it"
+    ]
+  }
 ]

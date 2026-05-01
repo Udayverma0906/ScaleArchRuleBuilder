@@ -94,7 +94,6 @@
       <div class="panel-header">
         <div class="panel-icon teal">⬡</div>
         <div class="panel-title">Detection method</div>
-         <!-- <button class="copy-btn" onclick="resetDetectionForm()">Reset</button> -->
         <div class="panel-subtitle">STEP 3</div>
       </div>
       <div class="panel-body">
@@ -117,16 +116,16 @@
         <div id="regex-section" style="display:flex;flex-direction:column;gap:16px;">
 
           <div class="field">
-  <label>Target language(s) <span style="color:var(--text-dim);font-size:9px;margin-left:4px;">Select All to run on all languages</span></label>
-  <input type="hidden" id="ruleLanguage" value="all"/>
-  <div class="custom-pill-grid" id="languagePills">
-    <button type="button" class="cpill cpill-selected" data-target="ruleLanguage" data-value="all"    onclick="selectPill(this)">All</button>
-    <button type="button" class="cpill" data-target="ruleLanguage" data-value="js-ts"   onclick="selectPill(this)">JS / TS</button>
-    <button type="button" class="cpill" data-target="ruleLanguage" data-value="python"  onclick="selectPill(this)">Python</button>
-    <button type="button" class="cpill" data-target="ruleLanguage" data-value="java"    onclick="selectPill(this)">Java</button>
-    <button type="button" class="cpill" data-target="ruleLanguage" data-value="cpp"     onclick="selectPill(this)">C / C++</button>
-  </div>
-</div>
+            <label>Target language(s) <span style="color:var(--text-dim);font-size:9px;margin-left:4px;">Select All to run on all languages</span></label>
+            <input type="hidden" id="ruleLanguage" value="all"/>
+            <div class="custom-pill-grid" id="languagePills">
+              <button type="button" class="cpill cpill-selected" data-target="ruleLanguage" data-value="all"    onclick="selectPill(this)">All</button>
+              <button type="button" class="cpill" data-target="ruleLanguage" data-value="js-ts"   onclick="selectPill(this)">JS / TS</button>
+              <button type="button" class="cpill" data-target="ruleLanguage" data-value="python"  onclick="selectPill(this)">Python</button>
+              <button type="button" class="cpill" data-target="ruleLanguage" data-value="java"    onclick="selectPill(this)">Java</button>
+              <button type="button" class="cpill" data-target="ruleLanguage" data-value="cpp"     onclick="selectPill(this)">C / C++</button>
+            </div>
+          </div>
 
           <!-- Pattern Library -->
           <div class="pat-lib-box">
@@ -198,7 +197,7 @@
         <div id="ast-section" style="display:none;flex-direction:column;gap:16px;">
 
           <div class="ast-hint">
-            <strong>How AST rules work:</strong> your function receives one node at a time from the syntax tree. Return <code style="color:var(--accent3)">null</code> to skip, return a <code style="color:var(--accent3)">RuleResult</code> to flag it.
+            <strong>How AST rules work:</strong> your function receives one node at a time from the syntax tree. Return <code style="color:var(--accent3)">null</code> to skip, return a result to flag it.
           </div>
 
           <div class="field">
@@ -207,10 +206,11 @@
             <div class="custom-pill-grid" id="astLanguagePills">
               <button type="button" class="cpill cpill-selected" data-target="astLanguage" data-value="js-ts"   onclick="selectPill(this);rebuildNodePicker()">JS / TS</button>
               <button type="button" class="cpill"                data-target="astLanguage" data-value="python"  onclick="selectPill(this);rebuildNodePicker()">Python</button>
+              <button type="button" class="cpill"                data-target="astLanguage" data-value="java"    onclick="selectPill(this);rebuildNodePicker()">Java</button>
             </div>
           </div>
 
-          <!-- Node picker — click selects, click again on info icon shows detail card -->
+          <!-- Node picker -->
           <div class="field">
             <label><span class="required">*</span> AST node type
               <span style="color:var(--text-dim);font-size:9px;margin-left:4px;">click to select · click ⓘ for details · multiple allowed</span>
@@ -282,11 +282,6 @@
       <div class="output-header">
         <div style="display: flex; flex-direction: column; gap: 8px;">
           <div class="output-title">Generated code</div>
-          <!-- <div class="warning-box">
-            <span class="warning-icon">⚠️</span>
-            <span class="warning-text">This generated code provides a basic skeleton structure. It may not include complete logic and requires manual review and adjustments before use.</span>
-          </div> -->
-
           <div class="warning-box">
             <span class="warning-icon">⚠️</span>
             <span class="warning-text">
@@ -296,7 +291,6 @@
               </button>
             </span>
           </div>
-
         </div>
         <div class="output-tabs">
           <button class="tab-btn active" onclick="switchTab('code',this)">rule.ts</button>
@@ -335,8 +329,8 @@
           <div class="step-card" id="instrStep3" style="display:none;">
             <div class="step-num">3</div>
             <div class="step-content">
-              <h3 id="instrStep3Title" >Register in CUSTOM_AST_CHECKS</h3>
-              <p id="instrStep3Body" >Also add your function name to the <span class="inline-code">CUSTOM_AST_CHECKS</span> array at the bottom of Section 2.</p>
+              <h3 id="instrStep3Title">Register in the correct array</h3>
+              <p id="instrStep3Body">Also add your function name to the exports array at the bottom of the relevant section.</p>
             </div>
           </div>
           <div class="step-card">
@@ -369,9 +363,9 @@
   <div class="modal-content">
     <span class="close" data-popup-close>&times;</span>
     <h2>ScaleArch Rule Builder</h2>
-    <p><strong>Version: </strong>v3.3.3</p>
+    <p><strong>Version: </strong>v3.4.0</p>
     <p>
-  <strong>Created by:</strong> 
+  <strong>Created by:</strong>
   <a href="https://www.linkedin.com/in/uday-verma0906/" target="_blank" rel="noopener noreferrer">
     Uday Verma
   </a>
@@ -413,6 +407,7 @@
 <script src="js/generators/regex.js" defer></script>
 <script src="js/generators/ast-jsts.js" defer></script>
 <script src="js/generators/ast-python.js" defer></script>
+<script src="js/generators/ast-java.js" defer></script>
 
 <!-- Core — popup must load before script.js -->
 <script src="js/popup.js" defer></script>
